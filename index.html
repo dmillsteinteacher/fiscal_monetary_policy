@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Policy Analysis: MLF & AS-AD Simulator V3 (Corrected)</title>
+    <title>Policy Analysis: MLF & AS-AD Simulator V4 (Final)</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         /* CSS for a clean, educational layout */
@@ -191,7 +191,11 @@
         function createMLFGraph(fiscalShift, monetaryShift) {
             const r_range = Array.from({ length: 41 }, (_, i) => 1 + i * 0.2); // r from 1 to 9
             
-            // Calculate shifted curves
+            // Calculate Base Curves (shift = 0)
+            const dlf_base = getMLFCurve(r_range, 0, true);
+            const slf_base = getMLFCurve(r_range, 0, false);
+
+            // Calculate Shifted Curves
             const dlf_new = getMLFCurve(r_range, fiscalShift, true);
             const slf_new = getMLFCurve(r_range, monetaryShift, false);
 
@@ -201,12 +205,19 @@
             const q_new = EQ_Q + (r_new - EQ_R) / SLOPE_S + monetaryShift;
 
             const traces = [
-                // New Curves (solid) - ONLY THE SHIFTED CURVES ARE PLOTTED NOW
+                // 1. Base Curves (light gray, dashed)
+                { x: dlf_base, y: r_range, mode: 'lines', name: 'DLF (Base)', line: { dash: 'dash', color: 'gray', width: 1 }, showlegend: false, hoverinfo: 'none' },
+                { x: slf_base, y: r_range, mode: 'lines', name: 'SLF (Base)', line: { dash: 'dash', color: 'gray', width: 1 }, showlegend: false, hoverinfo: 'none' },
+
+                // 2. New Curves (solid, bold)
                 { x: dlf_new, y: r_range, mode: 'lines', name: 'DLF\' (Fiscal)', line: { color: 'red', width: 3 } },
                 { x: slf_new, y: r_range, mode: 'lines', name: 'SLF\' (Monetary)', line: { color: 'blue', width: 3 } },
                 
-                // New Equilibrium Point
-                { x: [q_new], y: [r_new], mode: 'markers', name: 'New Eq (r\', Q\')', marker: { size: 10, color: 'black' } }
+                // 3. Initial Equilibrium Point
+                { x: [EQ_Q], y: [EQ_R], mode: 'markers', name: 'Initial Eq', marker: { size: 10, color: 'green', symbol: 'circle-open' }, showlegend: false },
+                
+                // 4. New Equilibrium Point (The moving dot)
+                { x: [q_new], y: [r_new], mode: 'markers', name: 'New Eq (r\', Q\')', marker: { size: 10, color: 'black', symbol: 'circle' } }
             ];
 
             mlfLayout = {
@@ -249,7 +260,13 @@
             const AD_SENSITIVITY = 5; 
             const ad_shift = (EQ_R - r_new) * AD_SENSITIVITY; 
 
-            const sras_base = getSRASCurve(pl_range); // SRAS is always fixed in the short-run analysis
+            // Calculate Base AD Curve
+            const ad_base = getADCurve(pl_range, 0); 
+
+            // Calculate SRAS and LRAS
+            const sras_base = getSRASCurve(pl_range);
+            
+            // Calculate New AD Curve
             const ad_new = getADCurve(pl_range, ad_shift);
 
             // Calculate new AS-AD equilibrium (PL_new, RGDP_new)
@@ -258,15 +275,21 @@
             const rgdp_new = EQ_RGDP + (pl_new - EQ_PL) / SLOPE_S;
 
             const traces = [
-                // Only SRAS and the new AD are plotted to show the shift
+                // 1. Base AD Curve (light gray, dashed)
+                { x: ad_base, y: pl_range, mode: 'lines', name: 'AD (Base)', line: { dash: 'dash', color: 'gray', width: 1 }, showlegend: false, hoverinfo: 'none' },
+
+                // 2. SRAS and LRAS (Static)
                 { x: sras_base, y: pl_range, mode: 'lines', name: 'SRAS', line: { color: 'green', width: 3 } },
                 { x: Array(pl_range.length).fill(MAX_RGDP), y: pl_range, mode: 'lines', name: 'LRAS (Potential)', line: { dash: 'dot', color: 'purple' }, hoverinfo: 'none' },
                 
-                // New AD Curve (solid)
+                // 3. New AD Curve (solid)
                 { x: ad_new, y: pl_range, mode: 'lines', name: 'AD\'', line: { color: 'red', width: 3 } },
                 
-                // New Equilibrium Point
-                { x: [rgdp_new], y: [pl_new], mode: 'markers', name: 'New Eq (rgdp\', PL\')', marker: { size: 10, color: 'black' } }
+                // 4. Initial Equilibrium Point
+                { x: [EQ_RGDP], y: [EQ_PL], mode: 'markers', name: 'Initial Eq', marker: { size: 10, color: 'green', symbol: 'circle-open' }, showlegend: false },
+
+                // 5. New Equilibrium Point (The moving dot)
+                { x: [rgdp_new], y: [pl_new], mode: 'markers', name: 'New Eq (rgdp\', PL\')', marker: { size: 10, color: 'black', symbol: 'circle' } }
             ];
 
             asadLayout = {
@@ -276,8 +299,7 @@
                 showlegend: true,
                 legend: { x: 1.05, y: 0.9, xanchor: 'left' },
                 annotations: [
-                    { x: EQ_RGDP, y: EQ_PL, text: 'Initial Eq', showarrow: true, arrowhead: 1, ax: -30, ay: -30 },
-                    { x: MAX_RGDP, y: 110, text: 'Y<sub>P</sub>', showarrow: false, font: { color: 'purple', size: 14 } }
+                    { x: EQ_RGDP, y: EQ_PL, text: 'Initial Eq', showarrow: true, arrowhead: 1, ax: -30, ay: -30 }
                 ]
             };
 
