@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Policy Analysis: MLF & AS-AD Simulator V11 (Annotation Fix)</title>
+    <title>Policy Analysis: MLF & AS-AD Simulator V12 (Final Math Fix)</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         /* CSS for a clean, educational layout */
@@ -180,8 +180,10 @@
             let q = [];
             for (let i = 0; i < r.length; i++) {
                 if (isDemand) {
+                    // DLF: Q = Q_eq + (r_eq - r) / SLOPE_D + shift 
                     q.push(EQ_Q + (EQ_R - r[i]) / SLOPE_D + shift);
                 } else {
+                    // SLF: Q = Q_eq + (r - r_eq) / SLOPE_S + shift
                     q.push(EQ_Q + (r[i] - EQ_R) / SLOPE_S + shift);
                 }
             }
@@ -199,10 +201,15 @@
             const dlf_new = getMLFCurve(r_range, fiscalShift, true);
             const slf_new = getMLFCurve(r_range, monetaryShift, false); 
 
-            // Calculate the new equilibrium (r_new, q_new)
-            const s_avg = (SLOPE_D + SLOPE_S) / 2;
-            const r_new = EQ_R + s_avg * (fiscalShift - monetaryShift);
-            const q_new = EQ_Q + (r_new - EQ_R) / SLOPE_S + monetaryShift;
+            // Calculate the new equilibrium (r_new, q_new) using the correct simultaneous solution
+            const sum_slopes = SLOPE_D + SLOPE_S;
+
+            // 1. Calculate r_new (Real Interest Rate)
+            const r_new = EQ_R + (SLOPE_D * SLOPE_S / sum_slopes) * (fiscalShift - monetaryShift);
+
+            // 2. Calculate q_new (Quantity of LF) - THIS IS THE CORRECTED FORMULA
+            const q_new = EQ_Q + (SLOPE_S * fiscalShift + SLOPE_D * monetaryShift) / sum_slopes;
+
 
             const traces = [
                 // 1. Base DLF/SLF Curves (light gray, dashed) - for reference
@@ -218,9 +225,6 @@
 
                 // 4. Initial Equilibrium Point (E0)
                 { x: [EQ_Q], y: [EQ_R], mode: 'markers', name: 'E<sub>0</sub>', marker: { size: 10, color: 'green', symbol: 'circle' }, showlegend: false },
-                
-                // 5. Placeholder for E1 Marker (we will use annotation for E1)
-                // We keep this trace slot empty, or simply remove the previous E1 trace.
             ];
 
             mlfLayout = {
@@ -233,30 +237,7 @@
                     // E0 Annotation
                     { x: EQ_Q, y: EQ_R, text: 'E<sub>0</sub>', showarrow: true, arrowhead: 1, ax: -30, ay: -30 }, 
                     
-                    // E1 Annotation (The Fix)
-                    {
-                        xref: 'x',
-                        yref: 'y',
-                        x: q_new,
-                        y: r_new,
-                        text: 'E<sub>1</sub>',
-                        showarrow: true,
-                        arrowhead: 0,
-                        ax: 30,
-                        ay: -30,
-                        font: { color: 'black', size: 12, family: 'Arial' },
-                        
-                        // Add a small shape marker at the intersection point (mimicking the diamond marker)
-                        // This is the core of the fix, forcing the marker to the coordinate.
-                        bgcolor: 'white',
-                        bordercolor: 'black',
-                        borderwidth: 1,
-                        xanchor: 'center',
-                        yanchor: 'middle',
-                        // You can't draw a diamond directly with annotation text, but we can use the position to center the text
-                        // For simplicity, we just use the coordinate and label it clearly.
-                    },
-                    // Add a standalone marker to guarantee the dot appears.
+                    // E1 Marker (The Fix: Using a coordinates-based annotation)
                     {
                         xref: 'x',
                         yref: 'y',
@@ -264,9 +245,19 @@
                         y: r_new,
                         text: '◆', // Diamond symbol
                         showarrow: false,
-                        font: { color: 'black', size: 16 },
+                        font: { color: 'black', size: 16, weight: 'bold' },
                         xanchor: 'center',
                         yanchor: 'middle'
+                    },
+                    // E1 Label Annotation
+                    {
+                        x: q_new,
+                        y: r_new,
+                        text: 'E<sub>1</sub>',
+                        showarrow: true,
+                        arrowhead: 1,
+                        ax: 30,
+                        ay: -30,
                     }
                 ]
             };
