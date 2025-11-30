@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy Combination Simulator (MLF & AS-AD)</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        .container { max-width: 1000px; margin: auto; padding: 20px; background-color: #fff; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+        h1 { color: #333; text-align: center; }
+        .policy-section { margin-bottom: 30px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #fafafa; }
+        .policy-section h2 { color: #0056b3; border-bottom: 2px solid #0056b3; padding-bottom: 5px; margin-top: 0; }
+        .slider-group { margin-bottom: 20px; }
+        .slider-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .graph-panel { border: 1px solid #ccc; padding: 15px; border-radius: 6px; }
+        .graph-panel h3 { margin-top: 0; color: #555; }
+        .result-r, .result-Qlf, .result-PL, .result-rgdp { font-size: 1.1em; font-weight: bold; margin: 5px 0; }
+        .change-up { color: green; }
+        .change-down { color: red; }
+        .change-neutral { color: #555; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Macro Policy Combination Simulator 📊</h1>
+    <p>Use the sliders below to model the effect of Fiscal and Monetary Policy actions on the Loanable Funds (MLF) and Aggregate Supply-Aggregate Demand (AS-AD) graphs.</p>
+
+    <div class="policy-section">
+        <h2>Policy Levers 🎚️</h2>
+        <div class="slider-group">
+            <label for="fiscalPolicy">Fiscal Policy Impact (Affects $D_{LF}$):</label>
+            <input type="range" id="fiscalPolicy" min="-10" max="10" value="0" step="1" style="width: 100%;">
+            <p id="fiscalValue">Current: Neutral (0)</p>
+            <small>(-10 = Contractionary/Surplus, 0 = Neutral, +10 = Expansionary/Deficit)</small>
+        </div>
+
+        <div class="slider-group">
+            <label for="monetaryPolicy">Monetary Policy Impact (Affects $S_{LF}$):</label>
+            <input type="range" id="monetaryPolicy" min="-10" max="10" value="0" step="1" style="width: 100%;">
+            <p id="monetaryValue">Current: Neutral (0)</p>
+            <small> (-10 = Contractionary, 0 = Neutral, +10 = Expansionary)</small>
+        </div>
+    </div>
+
+    <hr>
+
+    <h2>Combined Results</h2>
+    <div class="results-grid">
+        <div class="graph-panel">
+            <h3>Market for Loanable Funds (MLF)</h3>
+            <p>Real Interest Rate ($r$): <span id="resultR" class="result-r">Neutral</span></p>
+            <p>Quantity of Loanable Funds ($Q_{LF}$): <span id="resultQlf" class="result-Qlf">Neutral</span></p>
+            <small>The MLF shows the combined effects of $D_{LF}$ (Fiscal) and $S_{LF}$ (Monetary) shifts.</small>
+        </div>
+
+        <div class="graph-panel">
+            <h3>Aggregate Supply-Aggregate Demand (AS-AD)</h3>
+            <p>Price Level ($PL$): <span id="resultPL" class="result-PL">Neutral</span></p>
+            <p>Real Output ($rgdp$): <span id="resultRgdp" class="result-rgdp">Neutral</span></p>
+            <small>AD shifts right if $r$ falls or if Fiscal Policy is expansionary. Shifts left if $r$ rises or if Fiscal Policy is contractionary.</small>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="policy-section">
+        <h2>Policy Flaw/Trade-off Commentary</h2>
+        <p id="commentaryText">Select policy settings to see the resulting economic trade-off (e.g., Crowding Out, Inflation, etc.).</p>
+    </div>
+</div>
+
+<script>
+    const fiscalSlider = document.getElementById('fiscalPolicy');
+    const monetarySlider = document.getElementById('monetaryPolicy');
+    const fiscalValueText = document.getElementById('fiscalValue');
+    const monetaryValueText = document.getElementById('monetaryValue');
+
+    const resultR = document.getElementById('resultR');
+    const resultQlf = document.getElementById('resultQlf');
+    const resultPL = document.getElementById('resultPL');
+    const resultRgdp = document.getElementById('resultRgdp');
+    const commentaryText = document.getElementById('commentaryText');
+
+    // Helper function to determine the change based on score
+    function getChange(score) {
+        if (score > 3) return { text: 'Significant Increase (++)', class: 'change-up' };
+        if (score > 0) return { text: 'Increase (+)', class: 'change-up' };
+        if (score < -3) return { text: 'Significant Decrease (--) Custome', class: 'change-down' };
+        if (score < 0) return { text: 'Decrease (-)', class: 'change-down' };
+        return { text: 'Neutral/Unchanged', class: 'change-neutral' };
+    }
+
+    // Main calculation function
+    function updateResults() {
+        const fiscal = parseInt(fiscalSlider.value); // D_LF shift (Positive = Right)
+        const monetary = parseInt(monetarySlider.value); // S_LF shift (Positive = Right)
+
+        // 1. MLF Results:
+        // Interest Rate (r): Determined by the difference between D_LF and S_LF shifts.
+        // Fiscal (D_LF Right) increases r. Monetary (S_LF Right) decreases r.
+        const r_score = fiscal - monetary; 
+        const r_change = getChange(r_score);
+        resultR.textContent = r_change.text;
+        resultR.className = 'result-r ' + r_change.class;
+
+        // Quantity of Loanable Funds (Q_LF): Determined by the sum of D_LF and S_LF shifts.
+        const Qlf_score = fiscal + monetary; 
+        const Qlf_change = getChange(Qlf_score);
+        resultQlf.textContent = Qlf_change.text;
+        resultQlf.className = 'result-Qlf ' + Qlf_change.class;
+
+        // 2. AS-AD Results (Short Run):
+        // Aggregate Demand (AD) is driven by:
+        // a) Fiscal Policy (G/T)
+        // b) Interest Rate (r) - where a lower r increases AD (I & C)
+        const AD_r_component = -r_score; // Lower r (+ score) increases AD
+        const AD_score = fiscal + AD_r_component; 
+        
+        const AD_change = getChange(AD_score);
+        // PL and rgdp follow AD in the short run
+        resultPL.textContent = AD_change.text;
+        resultPL.className = 'result-PL ' + AD_change.class;
+        resultRgdp.textContent = AD_change.text;
+        resultRgdp.className = 'result-rgdp ' + AD_change.class;
+        
+        // Update slider value displays
+        fiscalValueText.textContent = `Current: ${fiscal > 0 ? 'Expansionary' : (fiscal < 0 ? 'Contractionary' : 'Neutral')} (${fiscal})`;
+        monetaryValueText.textContent = `Current: ${monetary > 0 ? 'Expansionary' : (monetary < 0 ? 'Contractionary' : 'Neutral')} (${monetary})`;
+
+
+        // 3. Commentary/Flaw Logic:
+        let commentary = '';
+        if (fiscal > 0 && monetary === 0) { // XFP ONLY
+            commentary = `**Expansionary Fiscal Policy Only:** This is the **Crowding Out** scenario. The interest rate (${r_change.text}) increases significantly, which will
