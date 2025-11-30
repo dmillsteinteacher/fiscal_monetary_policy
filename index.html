@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Policy Analysis: MLF & AS-AD Simulator V10 (Layering Fix)</title>
+    <title>Policy Analysis: MLF & AS-AD Simulator V11 (Annotation Fix)</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         /* CSS for a clean, educational layout */
@@ -209,18 +209,18 @@
                 { x: dlf_base, y: r_range, mode: 'lines', name: 'DLF (Base)', line: { dash: 'dash', color: 'gray', width: 1 }, showlegend: false, hoverinfo: 'none' },
                 { x: slf_base, y: r_range, mode: 'lines', name: 'SLF (Base)', line: { dash: 'dash', color: 'gray', width: 1 }, showlegend: false, hoverinfo: 'none' },
 
-                // 2. New Curves (solid, bold) - BOTH LINES ARE BACK
+                // 2. New Curves (solid, bold)
                 { x: dlf_new, y: r_range, mode: 'lines', name: 'DLF\' (Fiscal)', line: { color: 'red', width: 3 } },
                 { x: slf_new, y: r_range, mode: 'lines', name: 'SLF\' (Monetary)', line: { color: 'blue', width: 3 } },
                 
-                // 3. Equilibrium Path Tracer (Path must show the diagonal jump)
+                // 3. Equilibrium Path Tracer 
                 { x: [EQ_Q, q_new], y: [EQ_R, r_new], mode: 'lines', name: 'Eq Path', line: { dash: 'dot', color: 'black', width: 2 }, showlegend: false, hoverinfo: 'none' },
 
                 // 4. Initial Equilibrium Point (E0)
                 { x: [EQ_Q], y: [EQ_R], mode: 'markers', name: 'E<sub>0</sub>', marker: { size: 10, color: 'green', symbol: 'circle' }, showlegend: false },
                 
-                // 5. New Equilibrium Point (E1) - THE MOVING DOT - Plotted last to ensure it's on top
-                { x: [q_new], y: [r_new], mode: 'markers', name: 'E<sub>1</sub> (New Eq)', marker: { size: 10, color: 'black', symbol: 'diamond' } }
+                // 5. Placeholder for E1 Marker (we will use annotation for E1)
+                // We keep this trace slot empty, or simply remove the previous E1 trace.
             ];
 
             mlfLayout = {
@@ -230,7 +230,44 @@
                 showlegend: true,
                 legend: { x: 1.05, y: 0.9, xanchor: 'left' },
                 annotations: [
-                    { x: EQ_Q, y: EQ_R, text: 'E<sub>0</sub>', showarrow: true, arrowhead: 1, ax: -30, ay: -30 } 
+                    // E0 Annotation
+                    { x: EQ_Q, y: EQ_R, text: 'E<sub>0</sub>', showarrow: true, arrowhead: 1, ax: -30, ay: -30 }, 
+                    
+                    // E1 Annotation (The Fix)
+                    {
+                        xref: 'x',
+                        yref: 'y',
+                        x: q_new,
+                        y: r_new,
+                        text: 'E<sub>1</sub>',
+                        showarrow: true,
+                        arrowhead: 0,
+                        ax: 30,
+                        ay: -30,
+                        font: { color: 'black', size: 12, family: 'Arial' },
+                        
+                        // Add a small shape marker at the intersection point (mimicking the diamond marker)
+                        // This is the core of the fix, forcing the marker to the coordinate.
+                        bgcolor: 'white',
+                        bordercolor: 'black',
+                        borderwidth: 1,
+                        xanchor: 'center',
+                        yanchor: 'middle',
+                        // You can't draw a diamond directly with annotation text, but we can use the position to center the text
+                        // For simplicity, we just use the coordinate and label it clearly.
+                    },
+                    // Add a standalone marker to guarantee the dot appears.
+                    {
+                        xref: 'x',
+                        yref: 'y',
+                        x: q_new,
+                        y: r_new,
+                        text: '◆', // Diamond symbol
+                        showarrow: false,
+                        font: { color: 'black', size: 16 },
+                        xanchor: 'center',
+                        yanchor: 'middle'
+                    }
                 ]
             };
 
@@ -294,7 +331,7 @@
                 // 5. Initial Equilibrium Point (E0)
                 { x: [EQ_RGDP], y: [EQ_PL], mode: 'markers', name: 'E<sub>0</sub>', marker: { size: 10, color: 'green', symbol: 'circle' }, showlegend: false },
 
-                // 6. New Equilibrium Point (E1) - THE MOVING DOT
+                // 6. New Equilibrium Point (E1) - THE MOVING DOT (Stays as a trace here, as it's correct)
                 { x: [rgdp_new], y: [pl_new], mode: 'markers', name: 'E<sub>1</sub> (New Eq)', marker: { size: 10, color: 'black', symbol: 'diamond' } }
             ];
 
