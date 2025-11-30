@@ -3,231 +3,303 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Macro Policy Combination Simulator</title>
+    <title>Policy Analysis: MLF & AS-AD Simulator</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
-        /* General Styling */
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
-        .container { max-width: 1000px; margin: auto; padding: 20px; background-color: #fff; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
-        h1 { color: #333; text-align: center; }
-        
-        /* Sections and Sliders */
-        .policy-section { margin-bottom: 30px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #fafafa; }
-        .policy-section h2 { color: #0056b3; border-bottom: 2px solid #0056b3; padding-bottom: 5px; margin-top: 0; }
-        .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .graph-panel { border: 1px solid #ccc; padding: 15px; border-radius: 6px; }
-        
-        /* Result Text Formatting (for y-axis variables) */
-        .result-item { font-size: 1.1em; font-weight: bold; margin: 5px 0; }
-        .change-up { color: green; }
-        .change-down { color: red; }
-        .change-neutral { color: #555; }
-        
-        /* Variable Rendering (using CSS for italic/subscripts) */
-        .mlf-r::after { content: "r"; font-style: italic; }
-        .mlf-qlf::after { content: "Qlf"; font-style: italic; }
-        .asad-pl::after { content: "PL"; font-style: italic; }
-        .asad-rgdp::after { content: "rgdp"; font-style: italic; }
-        
-        /* Curve Shift Visualization (The compromise solution) */
-        .curve-shift-box {
-            padding: 10px;
-            margin-top: 15px;
-            text-align: center;
-            font-weight: bold;
-            border-radius: 4px;
-            border: 2px solid #555;
-            min-height: 50px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            background-color: #f0f0f0;
+        /* CSS for a clean, educational layout */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
         }
-        .shift-right { color: green; }
-        .shift-left { color: red; }
-        .shift-none { color: #555; }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #004d99;
+            text-align: center;
+            border-bottom: 3px solid #004d99;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        h2 {
+            color: #28a745;
+            margin-top: 30px;
+        }
+        .graph-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .graph {
+            width: 50%;
+            height: 450px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #fff;
+        }
+        .policy-controls {
+            padding: 20px;
+            border: 1px solid #ff9900;
+            border-radius: 8px;
+            background-color: #fffaf0;
+        }
+        .slider-group {
+            margin-bottom: 25px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #d9534f;
+        }
+        input[type=range] {
+            width: 100%;
+        }
+        .policy-value {
+            font-weight: bold;
+            color: #007bff;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Macro Policy Combination Simulator 📊</h1>
-    <p>Use the sliders to model policy effects on the Loanable Funds (MLF) and Aggregate Supply-Aggregate Demand (AS-AD) graphs. **Arrows show the direction of curve shifts (MLF) and the equilibrium change (AS-AD).**</p>
+    <div class="container">
+        <h1>Policy Analysis: Loanable Funds (MLF) and AS-AD Graphs</h1>
 
-    <div class="policy-section">
-        <h2>Policy Levers 🎚️</h2>
-        <div class="slider-group">
-            <label for="fiscalPolicy">Fiscal Policy Impact (Deficit/Surplus):</label>
-            <input type="range" id="fiscalPolicy" min="-10" max="10" value="0" step="1" style="width: 100%;">
-            <p id="fiscalValue">Current: Neutral (0)</p>
-            <small>(-10 = Contractionary/Surplus, +10 = Expansionary/Deficit. Affects Demand for Q<span class="mlf-qlf"></span>)</small>
-        </div>
+        <div class="policy-controls">
+            <h2>Policy Simulation Controls 🧪</h2>
 
-        <div class="slider-group">
-            <label for="monetaryPolicy">Monetary Policy Impact (Fed Action):</label>
-            <input type="range" id="monetaryPolicy" min="-10" max="10" value="0" step="1" style="width: 100%;">
-            <p id="monetaryValue">Current: Neutral (0)</p>
-            <small> (-10 = Contractionary/Sell Bonds, +10 = Expansionary/Buy Bonds. Affects Supply of Q<span class="mlf-qlf"></span>)</small>
-        </div>
-    </div>
-
-    <hr>
-
-    <h2>Combined Results & Graph Shifts</h2>
-    <div class="results-grid">
-        <div class="graph-panel">
-            <h3>Market for Loanable Funds (MLF)</h3>
-            
-            <div id="mlfShiftVisualization" class="curve-shift-box">
-                <p>D<span class="mlf-qlf"></span> Shift: <span id="dlfShift" class="shift-none">Neutral</span></p>
-                <p>S<span class="mlf-qlf"></span> Shift: <span id="slfShift" class="shift-none">Neutral</span></p>
+            <div class="slider-group">
+                <label for="fiscalPolicy">Fiscal Policy (Government Deficit/Surplus): <span id="fiscalValue" class="policy-value">0</span></label>
+                <input type="range" id="fiscalPolicy" min="-15" max="15" value="0" step="1" oninput="updateGraphs()">
+                <small>Negative = Contractionary (Surplus/Lower Demand for Borrowing); Positive = Expansionary (Deficit/Higher Demand for Borrowing)</small>
             </div>
-            
-            <p class="result-item">Real Interest Rate (<span class="mlf-r"></span>): <span id="resultR" class="change-neutral">Neutral</span></p>
-            <p class="result-item">Quantity of Loanable Funds (<span class="mlf-qlf"></span>): <span id="resultQlf" class="change-neutral">Neutral</span></p>
-        </div>
 
-        <div class="graph-panel">
-            <h3>Aggregate Supply-Aggregate Demand (AS-AD)</h3>
-            
-             <div id="adShiftVisualization" class="curve-shift-box">
-                <p>AD Shift: <span id="adShift" class="shift-none">Neutral</span></p>
+            <div class="slider-group">
+                <label for="monetaryPolicy">Monetary Policy (Money Supply Change): <span id="monetaryValue" class="policy-value">0</span></label>
+                <input type="range" id="monetaryPolicy" min="-15" max="15" value="0" step="1" oninput="updateGraphs()">
+                <small>Negative = Contractionary (Decrease Supply of Funds); Positive = Expansionary (Increase Supply of Funds)</small>
             </div>
-            
-            <p class="result-item">Price Level (<span class="asad-pl"></span>): <span id="resultPL" class="change-neutral">Neutral</span></p>
-            <p class="result-item">Real Output (<span class="asad-rgdp"></span>): <span id="resultRgdp" class="change-neutral">Neutral</span></p>
         </div>
+
+        <div class="graph-container">
+            <div id="mlfGraph" class="graph"></div>
+            <div id="asadGraph" class="graph"></div>
+        </div>
+        
+        <section>
+            <h2>Policy Commentary & Flaws (The "Why")</h2>
+            <p>Use the sliders above to model the four basic policies (setting one to zero and changing the other) and the two combinations (changing both) to observe the effects on **Real Interest Rate (r)** and **Real Output (rgdp)**. The combination effects, especially the **Crowding-Out** mechanism, are key:</p>
+            <ul>
+                <li><strong>Expansionary Fiscal Policy (XFP) Flaw:</strong> Government borrowing (DLF shifts right) pushes **r** up, which "crowds out" private investment.</li>
+                <li><strong>XFP + XMP Combo ("Obama"):</strong> The XMP (SLF shifts right) counteracts the rise in **r**, limiting crowding out and making the AD shift more effective.</li>
+                <li><strong>Contractionary Fiscal Policy (CFP) Flaw:</strong> Implementation **lag** means the policy might hit the economy too late.</li>
+                <li><strong>CFP + CMP Combo ("Truman"):</strong> The CMP (SLF shifts left) counteracts the fall in **r**, which might otherwise encourage private investment ("crowding-in") when the goal is to cool the economy.</li>
+            </ul>
+        </section>
     </div>
 
-    <hr>
+    <script>
+        // --- Core Graphing Logic (JavaScript) ---
 
-    <div class="policy-section">
-        <h2>Policy Flaw/Trade-off Commentary</h2>
-        <p id="commentaryText">Select policy settings to see the resulting economic trade-off (e.g., Crowding Out, Inflation, etc.).</p>
-    </div>
-</div>
+        // Constants for initial equilibrium and graph range
+        const EQ_R = 5;      // Initial Real Interest Rate (r)
+        const EQ_Q = 100;    // Initial Quantity of Loanable Funds (QLF)
+        const EQ_PL = 100;   // Initial Price Level (PL)
+        const EQ_RGDP = 500; // Initial Real GDP (rgdp)
+        const SLOPE_D = 0.5; // Slope for Demand (DLF/AD)
+        const SLOPE_S = 0.5; // Slope for Supply (SLF/AS)
+        const MAX_RGDP = 650; // For Long-Run Aggregate Supply (LRAS)
 
-<script>
-    // --- ELEMENT REFERENCES ---
-    const fiscalSlider = document.getElementById('fiscalPolicy');
-    const monetarySlider = document.getElementById('monetaryPolicy');
-    const fiscalValueText = document.getElementById('fiscalValue');
-    const monetaryValueText = document.getElementById('monetaryValue');
-
-    const resultR = document.getElementById('resultR');
-    const resultQlf = document.getElementById('resultQlf');
-    const resultPL = document.getElementById('resultPL');
-    const resultRgdp = document.getElementById('resultRgdp');
-    const commentaryText = document.getElementById('commentaryText');
-    
-    // Curve shift visual references
-    const dlfShift = document.getElementById('dlfShift');
-    const slfShift = document.getElementById('slfShift');
-    const adShift = document.getElementById('adShift');
-
-
-    // Helper function for Y-axis equilibrium results (r, Qlf, PL, rgdp)
-    function getChange(score) {
-        if (score > 3) return { text: 'Significant Increase', class: 'change-up', arrow: '↑↑' };
-        if (score > 0) return { text: 'Increase', class: 'change-up', arrow: '↑' };
-        if (score < -3) return { text: 'Significant Decrease', class: 'change-down', arrow: '↓↓' };
-        if (score < 0) return { text: 'Decrease', class: 'change-down', arrow: '↓' };
-        return { text: 'Neutral/Unchanged', class: 'change-neutral', arrow: '↔' };
-    }
-
-    // Helper function for Curve Shifts (X-axis movement)
-    function getCurveShift(value) {
-        if (value > 0) return { text: 'RIGHT →', class: 'shift-right' };
-        if (value < 0) return { text: 'LEFT ←', class: 'shift-left' };
-        return { text: 'Neutral', class: 'shift-none' };
-    }
-
-    // --- MAIN CALCULATION & UPDATE FUNCTION ---
-    function updateResults() {
-        const fiscal = parseInt(fiscalSlider.value); // D_LF shift (Positive = Right)
-        const monetary = parseInt(monetarySlider.value); // S_LF shift (Positive = Right)
-
-        // 1. --- MLF Curve Shifts & Equilibrium ---
+        let mlfLayout = {};
+        let asadLayout = {};
         
-        // D_LF Shift (from Fiscal)
-        const dlf_shift = getCurveShift(fiscal);
-        dlfShift.textContent = dlf_shift.text;
-        dlfShift.className = dlf_shift.class;
+        // --- 1. Loanable Funds Market (MLF) Functions ---
         
-        // S_LF Shift (from Monetary)
-        const slf_shift = getCurveShift(monetary);
-        slfShift.textContent = slf_shift.text;
-        slfShift.className = slf_shift.class;
-
-        // Equilibrium Results
-        const r_score = fiscal - monetary; // r increases if D shifts right more than S (or S shifts left)
-        const r_change = getChange(r_score);
-        resultR.textContent = `${r_change.text} ${r_change.arrow}`;
-        resultR.className = r_change.class; 
-
-        const Qlf_score = fiscal + monetary; 
-        const Qlf_change = getChange(Qlf_score);
-        resultQlf.textContent = `${Qlf_change.text} ${Qlf_change.arrow}`;
-        resultQlf.className = Qlf_change.class; 
-
-        // 2. --- AS-AD Curve Shift & Equilibrium ---
-        
-        // AD Score: Fiscal (G/T) effect + Interest Rate (r) effect 
-        // Note: AD is indirectly proportional to r.
-        const AD_r_component = -r_score; 
-        const AD_score = fiscal + AD_r_component; 
-        
-        const AD_shift_result = getCurveShift(AD_score);
-        adShift.textContent = AD_shift_result.text;
-        adShift.className = AD_shift_result.class;
-
-        // PL and rgdp follow the AD shift in the short run
-        const AD_change = getChange(AD_score);
-        
-        resultPL.textContent = `${AD_change.text} ${AD_change.arrow}`;
-        resultPL.className = AD_change.class; 
-        resultRgdp.textContent = `${AD_change.text} ${AD_change.arrow}`;
-        resultRgdp.className = AD_change.class; 
-        
-        // Update slider value displays
-        fiscalValueText.textContent = `Current: ${fiscal > 0 ? 'Expansionary' : (fiscal < 0 ? 'Contractionary' : 'Neutral')} (${fiscal})`;
-        monetaryValueText.textContent = `Current: ${monetary > 0 ? 'Expansionary' : (monetary < 0 ? 'Contractionary' : 'Neutral')} (${monetary})`;
-
-
-        // 3. --- Commentary/Flaw Logic (retained) ---
-        let commentary = '';
-        
-        // Single Policies (Flaws)
-        if (fiscal > 0 && monetary === 0) { // XFP ONLY
-            commentary = `**Expansionary Fiscal Policy Only (Flaw: Crowding Out):** The Real Interest Rate (${r_change.text}) increases significantly, which will deter private investment, slowing long-run growth.`;
-        } else if (fiscal < 0 && monetary === 0) { // CFP ONLY
-            commentary = `**Contractionary Fiscal Policy Only (Flaw: Implementation Lag):** This policy is subject to delays (Congress/President), making it slow to enact and potentially destabilizing.`;
-        } else if (fiscal === 0 && monetary > 0) { // XMP ONLY
-            commentary = `**Expansionary Monetary Policy Only (Flaw: Impact Lag):** This policy is subject to a long and variable lag (6-18 months) as changes filter through to spending. Banks may also hoard reserves.`;
-        } else if (fiscal === 0 && monetary < 0) { // CMP ONLY
-            commentary = `**Contractionary Monetary Policy Only (Flaw: Slows LRAS):** The significant increase in the Real Interest Rate (${r_change.text}) deters private investment, slowing down long-run potential output.`;
-        
-        // Combinations (Successes/Trade-offs)
-        } else if (fiscal > 0 && monetary > 0) { // Combo #1: XFP + XMP (Obama)
-            commentary = `**Combined Expansion (Obama Combo):** The AD shift is strong! Monetary Policy successfully **neutralizes the interest rate increase** (${r_change.text}), minimizing **Crowding Out**.`;
-        } else if (fiscal < 0 && monetary < 0) { // Combo #2: CFP + CMP (Truman)
-            commentary = `**Combined Contraction (Truman Combo):** The AD shift is strongly left, tackling inflation! Monetary Policy successfully **neutralizes the interest rate decrease** (${r_change.text}), preventing a counter-productive 'crowding-in' investment boom.`;
-        } else if (fiscal > 0 && monetary < 0) { // Combo #3: XFP + CMP (Opposite AD/Max Crowding Out)
-            commentary = `**Opposite Forces (XFP + CMP):** AD effects conflict. The strong increase in interest rates (${r_change.text}) due to both policies is a major concern, leading to **Maximum Crowding Out**.`;
-        } else if (fiscal < 0 && monetary > 0) { // Combo #4: CFP + XMP (Opposite AD/Max Crowding In)
-            commentary = `**Opposite Forces (CFP + XMP):** AD effects conflict. The strong decrease in interest rates (${r_change.text}) due to both policies is a major concern, potentially leading to a massive, unwanted **Investment Boom ('Crowding-In')**.`;
-        } else {
-             commentary = 'Select policy settings to see the resulting economic trade-off (e.g., Crowding Out, Inflation, etc.).';
+        // Baseline Demand (DLF) and Supply (SLF) for MLF
+        function getMLFCurve(r, shift, isDemand) {
+            let q = [];
+            for (let i = 0; i < r.length; i++) {
+                if (isDemand) {
+                    // DLF: Q = Q_EQ + (R_EQ - R) / SLOPE_D + shift
+                    q.push(EQ_Q + (EQ_R - r[i]) / SLOPE_D + shift);
+                } else {
+                    // SLF: Q = Q_EQ + (R - R_EQ) / SLOPE_S + shift
+                    q.push(EQ_Q + (r[i] - EQ_R) / SLOPE_S + shift);
+                }
+            }
+            return q;
         }
-        commentaryText.innerHTML = commentary;
-    }
 
-    // Event Listeners
-    fiscalSlider.addEventListener('input', updateResults);
-    monetarySlider.addEventListener('input', updateResults);
+        function createMLFGraph(fiscalShift, monetaryShift) {
+            const r_range = Array.from({ length: 41 }, (_, i) => 1 + i * 0.2); // r from 1 to 9
 
-    // Initial load
-    updateResults();
-</script>
+            // Shifts:
+            // Fiscal (DLF): The government deficit/surplus changes the Demand for funds.
+            // Monetary (SLF): The Fed's action changes the Supply of funds available for lending.
+            const dlf_base = getMLFCurve(r_range, 0, true);
+            const slf_base = getMLFCurve(r_range, 0, false);
+            
+            const dlf_new = getMLFCurve(r_range, fiscalShift, true);
+            const slf_new = getMLFCurve(r_range, monetaryShift, false);
+
+            // Calculate the new equilibrium (r_new, q_new)
+            // DLF_new = SLF_new
+            // Q_EQ + (R_EQ - R) / SLOPE_D + fiscalShift = Q_EQ + (R - R_EQ) / SLOPE_S + monetaryShift
+            // (R_EQ - R) / SLOPE_D + fiscalShift = (R - R_EQ) / SLOPE_S + monetaryShift
+            // Assuming SLOPE_D = SLOPE_S = S:
+            // R_EQ - R + S * fiscalShift = R - R_EQ + S * monetaryShift
+            // 2*R_EQ + S * (fiscalShift - monetaryShift) = 2 * R
+            const s_avg = (SLOPE_D + SLOPE_S) / 2;
+            const r_new = EQ_R + s_avg * (fiscalShift - monetaryShift);
+            const q_new = EQ_Q + (r_new - EQ_R) / SLOPE_S + monetaryShift;
+
+            const traces = [
+                // Base Curves (dashed)
+                { x: dlf_base, y: r_range, mode: 'lines', name: 'DLF (Base)', line: { dash: 'dash', color: 'gray' }, hoverinfo: 'none' },
+                { x: slf_base, y: r_range, mode: 'lines', name: 'SLF (Base)', line: { dash: 'dash', color: 'gray' }, hoverinfo: 'none' },
+                
+                // New Curves (solid)
+                { x: dlf_new, y: r_range, mode: 'lines', name: 'DLF\'', line: { color: 'red', width: 3 } },
+                { x: slf_new, y: r_range, mode: 'lines', name: 'SLF\'', line: { color: 'blue', width: 3 } },
+                
+                // New Equilibrium Point
+                { x: [q_new], y: [r_new], mode: 'markers', name: 'New Eq (r\', Q\')', marker: { size: 10, color: 'black' } }
+            ];
+
+            mlfLayout = {
+                title: 'Loanable Funds Market (MLF)',
+                xaxis: { title: 'Quantity of Loanable Funds (QLF)', range: [50, 150] },
+                yaxis: { title: 'Real Interest Rate (r)', range: [1, 9] },
+                showlegend: true,
+                legend: { x: 0.7, y: 0.2 },
+                annotations: [
+                    { x: EQ_Q, y: EQ_R, text: 'Initial Eq', showarrow: true, arrowhead: 1, ax: -30, ay: -30 }
+                ]
+            };
+
+            Plotly.newPlot('mlfGraph', traces, mlfLayout, { displayModeBar: false });
+            return { r_new: r_new, q_new: q_new };
+        }
+
+        // --- 2. Aggregate Supply-Aggregate Demand (AS-AD) Functions ---
+        
+        // Baseline Aggregate Demand (AD) and Short-Run Aggregate Supply (SRAS)
+        function getADCurve(pl, shift) {
+            let rgdp = [];
+            for (let i = 0; i < pl.length; i++) {
+                // AD: rgdp = RGDP_EQ + (PL_EQ - PL) / SLOPE_D + shift
+                rgdp.push(EQ_RGDP + (EQ_PL - pl[i]) / SLOPE_D + shift);
+            }
+            return rgdp;
+        }
+
+        function getSRASCurve(pl) {
+            let rgdp = [];
+            for (let i = 0; i < pl.length; i++) {
+                // SRAS: rgdp = RGDP_EQ + (PL - PL_EQ) / SLOPE_S
+                rgdp.push(EQ_RGDP + (pl[i] - EQ_PL) / SLOPE_S);
+            }
+            return rgdp;
+        }
+
+        function createASADGraph(r_new) {
+            const pl_range = Array.from({ length: 41 }, (_, i) => 80 + i * 1); // PL from 80 to 120
+
+            // The link: Change in real interest rate (r) causes a change in AD.
+            // A change in r from EQ_R (5) to r_new will shift AD.
+            // Assume AD shift is proportional to the change in r, and in the opposite direction.
+            // AD_Shift = (EQ_R - r_new) * AD_SENSITIVITY. Let sensitivity be 5.
+            const AD_SENSITIVITY = 5; 
+            const ad_shift = (EQ_R - r_new) * AD_SENSITIVITY; 
+
+            const sras_base = getSRASCurve(pl_range);
+            const ad_base = getADCurve(pl_range, 0);
+            const ad_new = getADCurve(pl_range, ad_shift);
+
+            // Calculate new AS-AD equilibrium (PL_new, RGDP_new)
+            // AD_new = SRAS_base
+            // EQ_RGDP + (PL_EQ - PL) / SLOPE_D + ad_shift = EQ_RGDP + (PL - PL_EQ) / SLOPE_S
+            // (PL_EQ - PL) / S + ad_shift = (PL - PL_EQ) / S
+            // PL_EQ - PL + S * ad_shift = PL - PL_EQ
+            // 2*PL_EQ + S * ad_shift = 2 * PL
+            const s_avg = (SLOPE_D + SLOPE_S) / 2;
+            const pl_new = EQ_PL + s_avg * ad_shift;
+            const rgdp_new = EQ_RGDP + (pl_new - EQ_PL) / SLOPE_S;
+
+            const traces = [
+                // Base Curves (dashed)
+                { x: ad_base, y: pl_range, mode: 'lines', name: 'AD (Base)', line: { dash: 'dash', color: 'gray' }, hoverinfo: 'none' },
+                { x: sras_base, y: pl_range, mode: 'lines', name: 'SRAS', line: { color: 'green', width: 3 } },
+                { x: Array(pl_range.length).fill(MAX_RGDP), y: pl_range, mode: 'lines', name: 'LRAS (Potential Output)', line: { dash: 'dot', color: 'purple' }, hoverinfo: 'none' },
+                
+                // New AD Curve (solid)
+                { x: ad_new, y: pl_range, mode: 'lines', name: 'AD\'', line: { color: 'red', width: 3 } },
+                
+                // New Equilibrium Point
+                { x: [rgdp_new], y: [pl_new], mode: 'markers', name: 'New Eq (rgdp\', PL\')', marker: { size: 10, color: 'black' } }
+            ];
+
+            asadLayout = {
+                title: 'Aggregate Demand - Aggregate Supply (AS-AD)',
+                xaxis: { title: 'Real GDP (rgdp)', range: [400, 600] },
+                yaxis: { title: 'Price Level (PL)', range: [80, 120] },
+                showlegend: true,
+                legend: { x: 0.05, y: 0.2 },
+                annotations: [
+                    { x: EQ_RGDP, y: EQ_PL, text: 'Initial Eq', showarrow: true, arrowhead: 1, ax: -30, ay: -30 },
+                    { x: MAX_RGDP, y: 110, text: 'Y<sub>P</sub>', showarrow: false, font: { color: 'purple', size: 14 } }
+                ]
+            };
+
+            Plotly.newPlot('asadGraph', traces, asadLayout, { displayModeBar: false });
+        }
+
+        // --- 3. Update Function (Called by Sliders) ---
+
+        function updateGraphs() {
+            const fiscalPolicyValue = parseFloat(document.getElementById('fiscalPolicy').value);
+            const monetaryPolicyValue = parseFloat(document.getElementById('monetaryPolicy').value);
+
+            // Update display values
+            document.getElementById('fiscalValue').textContent = fiscalPolicyValue;
+            document.getElementById('monetaryValue').textContent = monetaryPolicyValue;
+
+            // Step 1: Update MLF Graph and get the new Real Interest Rate (r')
+            // MLF shift is determined by both policy values
+            // The fiscal value shifts DLF (Demand)
+            // The monetary value shifts SLF (Supply)
+            const mlf_results = createMLFGraph(fiscalPolicyValue, monetaryPolicyValue);
+            
+            // Step 2: Use the new Real Interest Rate (r') to update the AS-AD Graph
+            // The change in r causes the AD curve to shift
+            createASADGraph(mlf_results.r_new);
+            
+            // Highlight key textual outcomes
+            // (You could add more complex text generation here based on the new equilibrium)
+            if (mlf_results.r_new > EQ_R + 0.1) {
+                document.querySelector('section ul li:nth-child(1)').innerHTML = '<strong>XFP Flaw: Crowding Out is <span style="color:red;">HIGH</span>.</strong> <small>(High rise in r)</small>';
+            } else if (mlf_results.r_new < EQ_R - 0.1) {
+                document.querySelector('section ul li:nth-child(1)').innerHTML = '<strong>CFP Effect: Interest Rate is <span style="color:green;">FALLING</span>.</strong> <small>(Potentially leading to "Crowding-In")</small>';
+            } else {
+                document.querySelector('section ul li:nth-child(1)').innerHTML = '<strong>XFP/XMP Combo: Crowding Out is <span style="color:blue;">NEUTRALIZED</span>.</strong> <small>(r is stable)</small>';
+            }
+        }
+        
+        // Initial setup call
+        document.addEventListener('DOMContentLoaded', updateGraphs);
+    </script>
 
 </body>
 </html>
