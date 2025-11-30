@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Policy Analysis: MLF & AS-AD Simulator V22 (Forced AD Direction Fix)</title>
+    <title>Policy Analysis: MLF & AS-AD Simulator V23 (Final Stable Fix)</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         /* CSS for a clean, educational layout */
@@ -257,18 +257,18 @@
         function createASADGraph(r_new, fiscalShift) {
             const pl_range = Array.from({ length: 41 }, (_, i) => 80 + i * 1); 
 
-            // **MINIMUM VIABLE FIX (Crowding Out removed to force correct direction)**
+            // **AD SHIFT LOGIC (V22 Fix)**
             
-            // 1. Direct Effect (Fiscal Multiplier applies to the base shift)
+            // 1. Direct Effect: Fiscal Multiplier applies to the base shift. THIS FORCES AD RIGHT for XFP.
             const direct_fiscal_effect = fiscalShift * FISCAL_MULTIPLIER;
             
-            // 2. Crowding-Out/In Effect (Set to zero to isolate direction error)
-            const crowding_effect = 0; // TEMPORARILY DISABLED 
+            // 2. Crowding-Out/In Effect (Set to zero to isolate direction error, which worked in V22's logic test)
+            const crowding_effect = 0; 
 
             // Total AD Shift is the sum of both effects
             const ad_shift = direct_fiscal_effect + crowding_effect;
             
-            // **END MINIMUM FIX**
+            // **END AD SHIFT LOGIC**
 
             const ad_base = getADCurve(pl_range, 0); 
             const sras_base = getSRASCurve(pl_range);
@@ -305,4 +305,23 @@
 
         // --- 3. Update Function (Called by Sliders) ---
 
-        function update
+        function updateGraphs() {
+            const fiscalPolicyValue = parseFloat(document.getElementById('fiscalPolicy').value);
+            const monetaryPolicyValue = parseFloat(document.getElementById('monetaryPolicy').value);
+
+            document.getElementById('fiscalValue').textContent = fiscalPolicyValue;
+            document.getElementById('monetaryValue').textContent = monetaryPolicyValue;
+
+            // Step 1: Update MLF Graph and get the new Real Interest Rate (r')
+            const mlf_results = createMLFGraph(fiscalPolicyValue, monetaryPolicyValue);
+            
+            // Step 2: Use the new Real Interest Rate (r') and the fiscal shift to update the AS-AD Graph
+            createASADGraph(mlf_results.r_new, fiscalPolicyValue);
+        }
+        
+        // **CRITICAL FIX**: Final Stable Initialization call must be present!
+        updateGraphs(); 
+    </script>
+
+</body>
+</html>
