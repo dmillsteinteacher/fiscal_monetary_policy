@@ -205,9 +205,11 @@
             const sum_slopes = SLOPE_D + SLOPE_S;
 
             // 1. Calculate r_new (Real Interest Rate)
+            // r_new = EQ_R + [(SLOPE_D * SLOPE_S) / (SLOPE_D + SLOPE_S)] * (Fiscal - Monetary)
             const r_new = EQ_R + (SLOPE_D * SLOPE_S / sum_slopes) * (fiscalShift - monetaryShift);
 
             // 2. Calculate q_new (Quantity of LF) - THIS IS THE CORRECTED FORMULA
+            // q_new = EQ_Q + [(SLOPE_S * Fiscal) + (SLOPE_D * Monetary)] / (SLOPE_D + SLOPE_S)
             const q_new = EQ_Q + (SLOPE_S * fiscalShift + SLOPE_D * monetaryShift) / sum_slopes;
 
 
@@ -220,7 +222,7 @@
                 { x: dlf_new, y: r_range, mode: 'lines', name: 'DLF\' (Fiscal)', line: { color: 'red', width: 3 } },
                 { x: slf_new, y: r_range, mode: 'lines', name: 'SLF\' (Monetary)', line: { color: 'blue', width: 3 } },
                 
-                // 3. Equilibrium Path Tracer 
+                // 3. Equilibrium Path Tracer (Path must show the diagonal jump)
                 { x: [EQ_Q, q_new], y: [EQ_R, r_new], mode: 'lines', name: 'Eq Path', line: { dash: 'dot', color: 'black', width: 2 }, showlegend: false, hoverinfo: 'none' },
 
                 // 4. Initial Equilibrium Point (E0)
@@ -237,7 +239,7 @@
                     // E0 Annotation
                     { x: EQ_Q, y: EQ_R, text: 'E<sub>0</sub>', showarrow: true, arrowhead: 1, ax: -30, ay: -30 }, 
                     
-                    // E1 Marker (The Fix: Using a coordinates-based annotation)
+                    // E1 Marker (Using a coordinates-based annotation for visual dominance)
                     {
                         xref: 'x',
                         yref: 'y',
@@ -322,7 +324,7 @@
                 // 5. Initial Equilibrium Point (E0)
                 { x: [EQ_RGDP], y: [EQ_PL], mode: 'markers', name: 'E<sub>0</sub>', marker: { size: 10, color: 'green', symbol: 'circle' }, showlegend: false },
 
-                // 6. New Equilibrium Point (E1) - THE MOVING DOT (Stays as a trace here, as it's correct)
+                // 6. New Equilibrium Point (E1) - THE MOVING DOT 
                 { x: [rgdp_new], y: [pl_new], mode: 'markers', name: 'E<sub>1</sub> (New Eq)', marker: { size: 10, color: 'black', symbol: 'diamond' } }
             ];
 
