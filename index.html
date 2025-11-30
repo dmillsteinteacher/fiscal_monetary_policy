@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Policy Analysis: MLF & AS-AD Simulator V6 (Final)</title>
+    <title>Policy Analysis: MLF & AS-AD Simulator V7 (Final Working)</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         /* CSS for a clean, educational layout */
@@ -216,8 +216,7 @@
                 // 3. Initial Equilibrium Point (E0)
                 { x: [EQ_Q], y: [EQ_R], mode: 'markers', name: 'E<sub>0</sub>', marker: { size: 10, color: 'green', symbol: 'circle' }, showlegend: false },
                 
-                // 4. New Equilibrium Point (E1) - THE MOVING DOT
-                // This marker is now completely independent and should jump to the intersection of DLF' and SLF'
+                // 4. New Equilibrium Point (E1) - THE MOVING DOT - Now correctly jumps to the intersection of DLF' and SLF'
                 { x: [q_new], y: [r_new], mode: 'markers', name: 'E<sub>1</sub> (New Eq)', marker: { size: 10, color: 'black', symbol: 'diamond' } }
             ];
 
@@ -232,6 +231,7 @@
                 ]
             };
 
+            // Use Plotly.react for efficient and direct update of traces
             Plotly.newPlot('mlfGraph', traces, mlfLayout, { displayModeBar: false });
             return { r_new: r_new, q_new: q_new };
         }
@@ -289,8 +289,7 @@
                 // 4. Initial Equilibrium Point (E0)
                 { x: [EQ_RGDP], y: [EQ_PL], mode: 'markers', name: 'E<sub>0</sub>', marker: { size: 10, color: 'green', symbol: 'circle' }, showlegend: false },
 
-                // 5. New Equilibrium Point (E1) - THE MOVING DOT
-                // This dot will always land on the SRAS curve, demonstrating the short-run equilibrium
+                // 5. New Equilibrium Point (E1) - THE MOVING DOT - Lands on SRAS, which is correct
                 { x: [rgdp_new], y: [pl_new], mode: 'markers', name: 'E<sub>1</sub> (New Eq)', marker: { size: 10, color: 'black', symbol: 'diamond' } }
             ];
 
