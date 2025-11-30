@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Policy Analysis: MLF & AS-AD Simulator V24 (Stable Base + AD Fix)</title>
+    <title>Policy Analysis: MLF & AS-AD Simulator V25 (Stable Reset)</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         /* CSS for a clean, educational layout */
@@ -257,12 +257,12 @@
         function createASADGraph(r_new, fiscalShift) {
             const pl_range = Array.from({ length: 41 }, (_, i) => 80 + i * 1); 
 
-            // **AD SHIFT LOGIC (V22 Fix)**
+            // **AD SHIFT LOGIC (V24 Fix)**
             
             // 1. Direct Effect: Fiscal Multiplier applies to the base shift.
             const direct_fiscal_effect = fiscalShift * FISCAL_MULTIPLIER;
             
-            // 2. Crowding-Out/In Effect (Set to zero to isolate direction error, and ensure AD moves RIGHT)
+            // 2. Crowding-Out/In Effect (Set to zero for basic functionality test)
             const crowding_effect = 0; 
 
             // Total AD Shift is the sum of both effects
@@ -315,12 +315,12 @@
             // Step 1: Update MLF Graph and get the new Real Interest Rate (r')
             const mlf_results = createMLFGraph(fiscalPolicyValue, monetaryPolicyValue);
             
-            // Step 2: Use the new Real Interest Rate (r') and the fiscal shift to update the AS-AD Graph
+            // Step 2: Update the AS-AD Graph
             createASADGraph(mlf_results.r_new, fiscalPolicyValue);
         }
         
-        // **CRITICAL FIX**: Final Stable Initialization call must be present!
-        updateGraphs(); 
+        // **STABLE INITIALIZATION**: Using window.onload for maximum compatibility
+        window.onload = updateGraphs;
     </script>
 
 </body>
