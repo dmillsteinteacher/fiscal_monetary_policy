@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Policy Analysis: MLF & AS-AD Simulator V13 (Simplified Intersection)</title>
+    <title>Policy Analysis: MLF & AS-AD Simulator V14 (AD Logic Fix)</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         /* CSS for a clean, educational layout */
@@ -191,25 +191,17 @@
         }
 
         function createMLFGraph(fiscalShift, monetaryShift) {
-            const r_range = Array.from({ length: 41 }, (_, i) => 1 + i * 0.2); // r from 1 to 9
+            const r_range = Array.from({ length: 41 }, (_, i) => 1 + i * 0.2); 
             
-            // Calculate Base Curves (shift = 0)
             const dlf_base = getMLFCurve(r_range, 0, true);
             const slf_base = getMLFCurve(r_range, 0, false);
 
-            // Calculate Shifted Curves
             const dlf_new = getMLFCurve(r_range, fiscalShift, true);
             const slf_new = getMLFCurve(r_range, monetaryShift, false); 
 
-            // Calculate the new equilibrium (r_new, q_new) using the correct simultaneous solution
+            // Correct calculation for MLF equilibrium (V12 Fix)
             const sum_slopes = SLOPE_D + SLOPE_S;
-
-            // 1. Calculate r_new (Real Interest Rate)
-            // r_new = EQ_R + [(SLOPE_D * SLOPE_S) / (SLOPE_D + SLOPE_S)] * (Fiscal - Monetary)
             const r_new = EQ_R + (SLOPE_D * SLOPE_S / sum_slopes) * (fiscalShift - monetaryShift);
-
-            // 2. Calculate q_new (Quantity of LF) - THIS IS THE CORRECTED FORMULA
-            // q_new = EQ_Q + [(SLOPE_S * Fiscal) + (SLOPE_D * Monetary)] / (SLOPE_D + SLOPE_S)
             const q_new = EQ_Q + (SLOPE_S * fiscalShift + SLOPE_D * monetaryShift) / sum_slopes;
 
 
@@ -239,129 +231,12 @@
                     // E0 Annotation
                     { x: EQ_Q, y: EQ_R, text: 'E<sub>0</sub>', showarrow: true, arrowhead: 1, ax: -30, ay: -30 }, 
                     
-                    // E1 Intersection Indicator (Small Black Plus Sign - Cannot snap to a line)
+                    // E1 Intersection Indicator (Uses an Annotation to prevent Plotly snapping to a line)
                     {
-                        xref: 'x',
-                        yref: 'y',
-                        x: q_new,
-                        y: r_new,
-                        text: '+', // Simple cross symbol
-                        showarrow: false,
-                        font: { color: 'black', size: 24, weight: 'bold' },
-                        xanchor: 'center',
-                        yanchor: 'middle'
+                        xref: 'x', yref: 'y', x: q_new, y: r_new, text: '+', 
+                        showarrow: false, font: { color: 'black', size: 24, weight: 'bold' },
+                        xanchor: 'center', yanchor: 'middle'
                     },
-                    // E1 Label Annotation (Static label pointing to the cross)
+                    // E1 Label Annotation
                     {
-                        x: q_new,
-                        y: r_new,
-                        text: 'E<sub>1</sub>',
-                        showarrow: true,
-                        arrowhead: 1,
-                        ax: 30,
-                        ay: -30,
-                    }
-                ]
-            };
-
-            Plotly.newPlot('mlfGraph', traces, mlfLayout, { displayModeBar: false });
-            return { r_new: r_new, q_new: q_new };
-        }
-
-        // --- 2. Aggregate Supply-Aggregate Demand (AS-AD) Functions ---
-        
-        function getADCurve(pl, shift) {
-            let rgdp = [];
-            for (let i = 0; i < pl.length; i++) {
-                rgdp.push(EQ_RGDP + (EQ_PL - pl[i]) / SLOPE_D + shift);
-            }
-            return rgdp;
-        }
-
-        function getSRASCurve(pl) {
-            let rgdp = [];
-            for (let i = 0; i < pl.length; i++) {
-                rgdp.push(EQ_RGDP + (pl[i] - EQ_PL) / SLOPE_S);
-            }
-            return rgdp;
-        }
-
-        function createASADGraph(r_new) {
-            const pl_range = Array.from({ length: 41 }, (_, i) => 80 + i * 1); // PL from 80 to 120
-
-            // AD Shift is based on the change in r. Lower r shifts AD right.
-            const AD_SENSITIVITY = 5; 
-            const ad_shift = (EQ_R - r_new) * AD_SENSITIVITY; 
-
-            // Calculate Base AD Curve
-            const ad_base = getADCurve(pl_range, 0); 
-
-            // Calculate SRAS and LRAS (Static)
-            const sras_base = getSRASCurve(pl_range);
-            
-            // Calculate New AD Curve
-            const ad_new = getADCurve(pl_range, ad_shift);
-
-            // Calculate new AS-AD equilibrium (PL_new, RGDP_new)
-            const s_avg = (SLOPE_D + SLOPE_S) / 2;
-            const pl_new = EQ_PL + s_avg * ad_shift;
-            const rgdp_new = EQ_RGDP + (pl_new - EQ_PL) / SLOPE_S;
-
-            const traces = [
-                // 1. Base AD Curve (light gray, dashed) - for reference
-                { x: ad_base, y: pl_range, mode: 'lines', name: 'AD (Base)', line: { dash: 'dash', color: 'gray', width: 1 }, showlegend: false, hoverinfo: 'none' },
-
-                // 2. SRAS and LRAS (Static)
-                { x: sras_base, y: pl_range, mode: 'lines', name: 'SRAS', line: { color: 'green', width: 3 } },
-                { x: Array(pl_range.length).fill(MAX_RGDP), y: pl_range, mode: 'lines', name: 'LRAS (Potential)', line: { dash: 'dot', color: 'purple' }, hoverinfo: 'none' },
-                
-                // 3. New AD Curve (solid)
-                { x: ad_new, y: pl_range, mode: 'lines', name: 'AD\'', line: { color: 'red', width: 3 } },
-                
-                // 4. Equilibrium Path Tracer (Visualizing the move along SRAS)
-                { x: [EQ_RGDP, rgdp_new], y: [EQ_PL, pl_new], mode: 'lines', name: 'Eq Path', line: { dash: 'dot', color: 'black', width: 2 }, showlegend: false, hoverinfo: 'none' },
-
-                // 5. Initial Equilibrium Point (E0)
-                { x: [EQ_RGDP], y: [EQ_PL], mode: 'markers', name: 'E<sub>0</sub>', marker: { size: 10, color: 'green', symbol: 'circle' }, showlegend: false },
-
-                // 6. New Equilibrium Point (E1) - THE MOVING DOT 
-                { x: [rgdp_new], y: [pl_new], mode: 'markers', name: 'E<sub>1</sub> (New Eq)', marker: { size: 10, color: 'black', symbol: 'diamond' } }
-            ];
-
-            asadLayout = {
-                title: 'Aggregate Demand - Aggregate Supply (AS-AD)',
-                xaxis: { title: 'Real GDP (rgdp)', range: [400, 600] },
-                yaxis: { title: 'Price Level (PL)', range: [80, 120] },
-                showlegend: true,
-                legend: { x: 1.05, y: 0.9, xanchor: 'left' },
-                annotations: [
-                    { x: EQ_RGDP, y: EQ_PL, text: 'E<sub>0</sub>', showarrow: true, arrowhead: 1, ax: -30, ay: -30 }
-                ]
-            };
-
-            Plotly.newPlot('asadGraph', traces, asadLayout, { displayModeBar: false });
-        }
-
-        // --- 3. Update Function (Called by Sliders) ---
-
-        function updateGraphs() {
-            const fiscalPolicyValue = parseFloat(document.getElementById('fiscalPolicy').value);
-            const monetaryPolicyValue = parseFloat(document.getElementById('monetaryPolicy').value);
-
-            // Update display values
-            document.getElementById('fiscalValue').textContent = fiscalPolicyValue;
-            document.getElementById('monetaryValue').textContent = monetaryPolicyValue;
-
-            // Step 1: Update MLF Graph and get the new Real Interest Rate (r')
-            const mlf_results = createMLFGraph(fiscalPolicyValue, monetaryPolicyValue);
-            
-            // Step 2: Use the new Real Interest Rate (r') to update the AS-AD Graph
-            createASADGraph(mlf_results.r_new);
-        }
-        
-        // Initial setup call
-        document.addEventListener('DOMContentLoaded', updateGraphs);
-    </script>
-
-</body>
-</html>
+                        x: q_
