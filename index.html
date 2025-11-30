@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Policy Analysis: MLF & AS-AD Simulator V5 (Final)</title>
+    <title>Policy Analysis: MLF & AS-AD Simulator V6 (Final)</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         /* CSS for a clean, educational layout */
@@ -205,7 +205,7 @@
             const q_new = EQ_Q + (r_new - EQ_R) / SLOPE_S + monetaryShift;
 
             const traces = [
-                // 1. Base Curves (light gray, dashed)
+                // 1. Base Curves (light gray, dashed) - for reference
                 { x: dlf_base, y: r_range, mode: 'lines', name: 'DLF (Base)', line: { dash: 'dash', color: 'gray', width: 1 }, showlegend: false, hoverinfo: 'none' },
                 { x: slf_base, y: r_range, mode: 'lines', name: 'SLF (Base)', line: { dash: 'dash', color: 'gray', width: 1 }, showlegend: false, hoverinfo: 'none' },
 
@@ -217,6 +217,7 @@
                 { x: [EQ_Q], y: [EQ_R], mode: 'markers', name: 'E<sub>0</sub>', marker: { size: 10, color: 'green', symbol: 'circle' }, showlegend: false },
                 
                 // 4. New Equilibrium Point (E1) - THE MOVING DOT
+                // This marker is now completely independent and should jump to the intersection of DLF' and SLF'
                 { x: [q_new], y: [r_new], mode: 'markers', name: 'E<sub>1</sub> (New Eq)', marker: { size: 10, color: 'black', symbol: 'diamond' } }
             ];
 
@@ -227,7 +228,6 @@
                 showlegend: true,
                 legend: { x: 1.05, y: 0.9, xanchor: 'left' },
                 annotations: [
-                    // Annotation is now placed on the static E0 point for reference
                     { x: EQ_Q, y: EQ_R, text: 'E<sub>0</sub>', showarrow: true, arrowhead: 1, ax: -30, ay: -30 } 
                 ]
             };
@@ -276,7 +276,7 @@
             const rgdp_new = EQ_RGDP + (pl_new - EQ_PL) / SLOPE_S;
 
             const traces = [
-                // 1. Base AD Curve (light gray, dashed)
+                // 1. Base AD Curve (light gray, dashed) - for reference
                 { x: ad_base, y: pl_range, mode: 'lines', name: 'AD (Base)', line: { dash: 'dash', color: 'gray', width: 1 }, showlegend: false, hoverinfo: 'none' },
 
                 // 2. SRAS and LRAS (Static)
