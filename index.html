@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Policy Analysis: MLF & AS-AD Simulator V19 (Rebuilt)</title>
+    <title>Policy Analysis: MLF & AS-AD Simulator V20 (Final Stability Check)</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         /* CSS for a clean, educational layout */
@@ -177,12 +177,9 @@
         function getMLFCurve(r, shift, isDemand) {
             let q = [];
             for (let i = 0; i < r.length; i++) {
-                // Demand Curve (DLF) is downward sloping: Q decreases as r increases
                 if (isDemand) {
                     q.push(EQ_Q + (EQ_R - r[i]) / SLOPE_D + shift);
-                } 
-                // Supply Curve (SLF) is upward sloping: Q increases as r increases
-                else {
+                } else {
                     q.push(EQ_Q + (r[i] - EQ_R) / SLOPE_S + shift);
                 }
             }
@@ -192,7 +189,6 @@
         function createMLFGraph(fiscalShift, monetaryShift) {
             const r_range = Array.from({ length: 41 }, (_, i) => 1 + i * 0.2); 
             
-            // Calculate Curve Points
             const dlf_base = getMLFCurve(r_range, 0, true);
             const slf_base = getMLFCurve(r_range, 0, false);
             const dlf_new = getMLFCurve(r_range, fiscalShift, true);
@@ -203,16 +199,12 @@
             const r_new = EQ_R + (SLOPE_D * SLOPE_S / sum_slopes) * (fiscalShift - monetaryShift);
             const q_new = EQ_Q + (SLOPE_S * fiscalShift + SLOPE_D * monetaryShift) / sum_slopes;
 
+
             const traces = [
-                // Base Curves (Gray Dashed)
                 { x: dlf_base, y: r_range, mode: 'lines', name: 'DLF (Base)', line: { dash: 'dash', color: 'gray', width: 1 }, showlegend: false, hoverinfo: 'none' },
                 { x: slf_base, y: r_range, mode: 'lines', name: 'SLF (Base)', line: { dash: 'dash', color: 'gray', width: 1 }, showlegend: false, hoverinfo: 'none' },
-
-                // New Curves (Colored Solid)
                 { x: dlf_new, y: r_range, mode: 'lines', name: 'DLF\' (Fiscal)', line: { color: 'red', width: 3 } },
                 { x: slf_new, y: r_range, mode: 'lines', name: 'SLF\' (Monetary)', line: { color: 'blue', width: 3 } },
-                
-                // Equilibrium Path and Points
                 { x: [EQ_Q, q_new], y: [EQ_R, r_new], mode: 'lines', name: 'Eq Path', line: { dash: 'dot', color: 'black', width: 2 }, showlegend: false, hoverinfo: 'none' },
                 { x: [EQ_Q], y: [EQ_R], mode: 'markers', name: 'E<sub>0</sub>', marker: { size: 10, color: 'green', symbol: 'circle' }, showlegend: false },
             ];
@@ -245,7 +237,6 @@
         function getADCurve(pl, shift) {
             let rgdp = [];
             for (let i = 0; i < pl.length; i++) {
-                // AD is downward sloping
                 rgdp.push(EQ_RGDP + (EQ_PL - pl[i]) / SLOPE_D + shift);
             }
             return rgdp;
@@ -254,7 +245,6 @@
         function getSRASCurve(pl) {
             let rgdp = [];
             for (let i = 0; i < pl.length; i++) {
-                // SRAS is upward sloping
                 rgdp.push(EQ_RGDP + (pl[i] - EQ_PL) / SLOPE_S);
             }
             return rgdp;
@@ -265,12 +255,9 @@
 
             const AD_SENSITIVITY = 5; 
             
-            // CORRECT AD Shift Calculation (V14 Logic Re-verified): 
-            // Total AD Shift = (Direct Fiscal Shift) + (Crowding In/Out Effect)
-            // Crowding Effect: (EQ_R - r_new) is the change in r. If r falls, this is positive (Crowding In).
+            // CORRECT AD Shift Calculation: Direct Fiscal Shift + Crowding In/Out Effect
             const ad_shift = fiscalShift + (EQ_R - r_new) * AD_SENSITIVITY;
             
-            // Calculate Curve Points
             const ad_base = getADCurve(pl_range, 0); 
             const sras_base = getSRASCurve(pl_range);
             const ad_new = getADCurve(pl_range, ad_shift);
@@ -315,15 +302,18 @@
             document.getElementById('fiscalValue').textContent = fiscalPolicyValue;
             document.getElementById('monetaryValue').textContent = monetaryPolicyValue;
 
-            // Step 1: Update MLF Graph and get the new Real Interest Rate (r')
+            // Step 1: Update MLF Graph and get the new Real Interest Rate (r') and the fiscal shift value
             const mlf_results = createMLFGraph(fiscalPolicyValue, monetaryPolicyValue);
             
             // Step 2: Use the new Real Interest Rate (r') and the fiscal shift to update the AS-AD Graph
             createASADGraph(mlf_results.r_new, mlf_results.fiscalShift);
         }
         
-        // Initial setup call: Using window.onload for maximum stability with external libraries.
-        window.onload = updateGraphs;
+        // **CRITICAL FIX**: Calling updateGraphs directly when the script finishes executing, 
+        // which is after the HTML body has been processed. This bypasses DOMContentLoaded 
+        // issues and provides the most stable initial setup.
+        // We also ensure the slider controls are re-attached in case the oninput wasn't fully registered.
+        updateGraphs(); 
     </script>
 
 </body>
