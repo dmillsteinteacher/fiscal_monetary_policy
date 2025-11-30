@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Policy Analysis: MLF & AS-AD Simulator V8 (Path Tracer)</title>
+    <title>Policy Analysis: MLF & AS-AD Simulator V10 (Layering Fix)</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         /* CSS for a clean, educational layout */
@@ -197,7 +197,7 @@
 
             // Calculate Shifted Curves
             const dlf_new = getMLFCurve(r_range, fiscalShift, true);
-            const slf_new = getMLFCurve(r_range, monetaryShift, false);
+            const slf_new = getMLFCurve(r_range, monetaryShift, false); 
 
             // Calculate the new equilibrium (r_new, q_new)
             const s_avg = (SLOPE_D + SLOPE_S) / 2;
@@ -205,21 +205,21 @@
             const q_new = EQ_Q + (r_new - EQ_R) / SLOPE_S + monetaryShift;
 
             const traces = [
-                // 1. Base Curves (light gray, dashed) - for reference
+                // 1. Base DLF/SLF Curves (light gray, dashed) - for reference
                 { x: dlf_base, y: r_range, mode: 'lines', name: 'DLF (Base)', line: { dash: 'dash', color: 'gray', width: 1 }, showlegend: false, hoverinfo: 'none' },
                 { x: slf_base, y: r_range, mode: 'lines', name: 'SLF (Base)', line: { dash: 'dash', color: 'gray', width: 1 }, showlegend: false, hoverinfo: 'none' },
 
-                // 2. New Curves (solid, bold)
+                // 2. New Curves (solid, bold) - BOTH LINES ARE BACK
                 { x: dlf_new, y: r_range, mode: 'lines', name: 'DLF\' (Fiscal)', line: { color: 'red', width: 3 } },
                 { x: slf_new, y: r_range, mode: 'lines', name: 'SLF\' (Monetary)', line: { color: 'blue', width: 3 } },
                 
-                // 3. Equilibrium Path Tracer (THE FIX)
+                // 3. Equilibrium Path Tracer (Path must show the diagonal jump)
                 { x: [EQ_Q, q_new], y: [EQ_R, r_new], mode: 'lines', name: 'Eq Path', line: { dash: 'dot', color: 'black', width: 2 }, showlegend: false, hoverinfo: 'none' },
 
                 // 4. Initial Equilibrium Point (E0)
                 { x: [EQ_Q], y: [EQ_R], mode: 'markers', name: 'E<sub>0</sub>', marker: { size: 10, color: 'green', symbol: 'circle' }, showlegend: false },
                 
-                // 5. New Equilibrium Point (E1) - THE MOVING DOT
+                // 5. New Equilibrium Point (E1) - THE MOVING DOT - Plotted last to ensure it's on top
                 { x: [q_new], y: [r_new], mode: 'markers', name: 'E<sub>1</sub> (New Eq)', marker: { size: 10, color: 'black', symbol: 'diamond' } }
             ];
 
