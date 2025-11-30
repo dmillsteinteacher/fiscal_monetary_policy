@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Policy Analysis: MLF & AS-AD Simulator V12 (Final Math Fix)</title>
+    <title>Policy Analysis: MLF & AS-AD Simulator V13 (Simplified Intersection)</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         /* CSS for a clean, educational layout */
@@ -239,19 +239,19 @@
                     // E0 Annotation
                     { x: EQ_Q, y: EQ_R, text: 'E<sub>0</sub>', showarrow: true, arrowhead: 1, ax: -30, ay: -30 }, 
                     
-                    // E1 Marker (Using a coordinates-based annotation for visual dominance)
+                    // E1 Intersection Indicator (Small Black Plus Sign - Cannot snap to a line)
                     {
                         xref: 'x',
                         yref: 'y',
                         x: q_new,
                         y: r_new,
-                        text: '◆', // Diamond symbol
+                        text: '+', // Simple cross symbol
                         showarrow: false,
-                        font: { color: 'black', size: 16, weight: 'bold' },
+                        font: { color: 'black', size: 24, weight: 'bold' },
                         xanchor: 'center',
                         yanchor: 'middle'
                     },
-                    // E1 Label Annotation
+                    // E1 Label Annotation (Static label pointing to the cross)
                     {
                         x: q_new,
                         y: r_new,
