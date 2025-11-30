@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Policy Analysis: MLF & AS-AD Simulator V4 (Final)</title>
+    <title>Policy Analysis: MLF & AS-AD Simulator V5 (Final)</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         /* CSS for a clean, educational layout */
@@ -213,11 +213,11 @@
                 { x: dlf_new, y: r_range, mode: 'lines', name: 'DLF\' (Fiscal)', line: { color: 'red', width: 3 } },
                 { x: slf_new, y: r_range, mode: 'lines', name: 'SLF\' (Monetary)', line: { color: 'blue', width: 3 } },
                 
-                // 3. Initial Equilibrium Point
-                { x: [EQ_Q], y: [EQ_R], mode: 'markers', name: 'Initial Eq', marker: { size: 10, color: 'green', symbol: 'circle-open' }, showlegend: false },
+                // 3. Initial Equilibrium Point (E0)
+                { x: [EQ_Q], y: [EQ_R], mode: 'markers', name: 'E<sub>0</sub>', marker: { size: 10, color: 'green', symbol: 'circle' }, showlegend: false },
                 
-                // 4. New Equilibrium Point (The moving dot)
-                { x: [q_new], y: [r_new], mode: 'markers', name: 'New Eq (r\', Q\')', marker: { size: 10, color: 'black', symbol: 'circle' } }
+                // 4. New Equilibrium Point (E1) - THE MOVING DOT
+                { x: [q_new], y: [r_new], mode: 'markers', name: 'E<sub>1</sub> (New Eq)', marker: { size: 10, color: 'black', symbol: 'diamond' } }
             ];
 
             mlfLayout = {
@@ -227,7 +227,8 @@
                 showlegend: true,
                 legend: { x: 1.05, y: 0.9, xanchor: 'left' },
                 annotations: [
-                    { x: EQ_Q, y: EQ_R, text: 'Initial Eq', showarrow: true, arrowhead: 1, ax: -30, ay: -30 }
+                    // Annotation is now placed on the static E0 point for reference
+                    { x: EQ_Q, y: EQ_R, text: 'E<sub>0</sub>', showarrow: true, arrowhead: 1, ax: -30, ay: -30 } 
                 ]
             };
 
@@ -263,7 +264,7 @@
             // Calculate Base AD Curve
             const ad_base = getADCurve(pl_range, 0); 
 
-            // Calculate SRAS and LRAS
+            // Calculate SRAS and LRAS (Static)
             const sras_base = getSRASCurve(pl_range);
             
             // Calculate New AD Curve
@@ -285,11 +286,12 @@
                 // 3. New AD Curve (solid)
                 { x: ad_new, y: pl_range, mode: 'lines', name: 'AD\'', line: { color: 'red', width: 3 } },
                 
-                // 4. Initial Equilibrium Point
-                { x: [EQ_RGDP], y: [EQ_PL], mode: 'markers', name: 'Initial Eq', marker: { size: 10, color: 'green', symbol: 'circle-open' }, showlegend: false },
+                // 4. Initial Equilibrium Point (E0)
+                { x: [EQ_RGDP], y: [EQ_PL], mode: 'markers', name: 'E<sub>0</sub>', marker: { size: 10, color: 'green', symbol: 'circle' }, showlegend: false },
 
-                // 5. New Equilibrium Point (The moving dot)
-                { x: [rgdp_new], y: [pl_new], mode: 'markers', name: 'New Eq (rgdp\', PL\')', marker: { size: 10, color: 'black', symbol: 'circle' } }
+                // 5. New Equilibrium Point (E1) - THE MOVING DOT
+                // This dot will always land on the SRAS curve, demonstrating the short-run equilibrium
+                { x: [rgdp_new], y: [pl_new], mode: 'markers', name: 'E<sub>1</sub> (New Eq)', marker: { size: 10, color: 'black', symbol: 'diamond' } }
             ];
 
             asadLayout = {
@@ -299,7 +301,7 @@
                 showlegend: true,
                 legend: { x: 1.05, y: 0.9, xanchor: 'left' },
                 annotations: [
-                    { x: EQ_RGDP, y: EQ_PL, text: 'Initial Eq', showarrow: true, arrowhead: 1, ax: -30, ay: -30 }
+                    { x: EQ_RGDP, y: EQ_PL, text: 'E<sub>0</sub>', showarrow: true, arrowhead: 1, ax: -30, ay: -30 }
                 ]
             };
 
