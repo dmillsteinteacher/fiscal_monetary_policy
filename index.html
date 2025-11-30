@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Policy Analysis: MLF & AS-AD Simulator V23 (Final Stable Fix)</title>
+    <title>Policy Analysis: MLF & AS-AD Simulator V24 (Stable Base + AD Fix)</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         /* CSS for a clean, educational layout */
@@ -259,10 +259,10 @@
 
             // **AD SHIFT LOGIC (V22 Fix)**
             
-            // 1. Direct Effect: Fiscal Multiplier applies to the base shift. THIS FORCES AD RIGHT for XFP.
+            // 1. Direct Effect: Fiscal Multiplier applies to the base shift.
             const direct_fiscal_effect = fiscalShift * FISCAL_MULTIPLIER;
             
-            // 2. Crowding-Out/In Effect (Set to zero to isolate direction error, which worked in V22's logic test)
+            // 2. Crowding-Out/In Effect (Set to zero to isolate direction error, and ensure AD moves RIGHT)
             const crowding_effect = 0; 
 
             // Total AD Shift is the sum of both effects
