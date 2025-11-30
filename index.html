@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Policy Analysis: MLF & AS-AD Simulator V18 (Definitive Structural Fix)</title>
+    <title>Policy Analysis: MLF & AS-AD Simulator V19 (Rebuilt)</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         /* CSS for a clean, educational layout */
@@ -122,3 +122,209 @@
             <div id="mlfGraph" class="graph"></div>
             <div id="asadGraph" class="graph"></div>
         </div>
+        
+        <section>
+            <h2>Policy Commentary and Flaws</h2>
+            <p>Use the sliders above to model the policies and observe the mechanical shifts. The **flaws** listed below explain why policymakers often hesitate to use these tools alone.</p>
+
+            <h3 id="standalone-flaws">Standalone Policy Flaws</h3>
+            <ul class="flaws-list">
+                <li>
+                    <strong>XFP (Expansionary Fiscal Policy) Flaw:</strong>
+                    The **Crowding-Out Effect**. Government borrowing to fund the deficit increases **r** in the MLF, which reduces (crowds out) private Investment (**I**). This means slower long-run growth (slower rightward shift of LRAS).
+                </li>
+                <li>
+                    <strong>CFP (Contractionary Fiscal Policy) Flaw:</strong>
+                    **Implementation Lag**. Enacting tax and spending changes requires lengthy debate and legislative approval (Congress), which means the policy takes effect very slowly.
+                </li>
+                <li>
+                    <strong>XMP (Expansionary Monetary Policy) Flaw:</strong>
+                    **Impact Lag**. The Fed's actions immediately affect short-term rates, but it takes a long and variable time (6-18 months) for these changes to fully filter through the banking system to affect **I** and **C**, thus shifting **AD**.
+                </li>
+                <li>
+                    <strong>CMP (Contractionary Monetary Policy) Flaw:</strong>
+                    **Slowed Long-Run Growth**. The policy successfully raises **r** to cool inflation, but this higher rate also deters private Investment (**I**), slowing the growth of the economy's capital stock and the future LRAS.
+                </li>
+            </ul>
+
+            <h3 id="combo-objectives">Combination Policy Objectives (The Synergy)</h3>
+            <div class="combo-objective">
+                <h4>Combo #1: XFP + XMP ("Obama")</h4>
+                <p><strong>Goal:</strong> Stimulate **AD** (double push right) while **neutralizing the crowding-out effect**. The SLF shift (XMP) counteracts the rise in **r** caused by the DLF shift (XFP), making the fiscal stimulus far more effective without sacrificing future growth.</p>
+            </div>
+            <div class="combo-objective">
+                <h4>Combo #2: CFP + CMP ("Truman")</h4>
+                <p><strong>Goal:** Cool the economy by shifting **AD** left while **neutralizing the "crowding-in" effect**. The SLF shift (CMP) prevents **r** from falling too much, which would otherwise encourage a counter-productive boom in private Investment.</p>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // --- Core Graphing Logic (JavaScript) ---
+
+        // Constants for initial equilibrium and graph range
+        const EQ_R = 5;      // Initial Real Interest Rate (r)
+        const EQ_Q = 100;    // Initial Quantity of Loanable Funds (QLF)
+        const EQ_PL = 100;   // Initial Price Level (PL)
+        const EQ_RGDP = 500; // Initial Real GDP (rgdp)
+        const SLOPE_D = 0.5; // Slope for Demand (DLF/AD)
+        const SLOPE_S = 0.5; // Slope for Supply (SLF/AS)
+        const MAX_RGDP = 550; // For Long-Run Aggregate Supply (LRAS)
+
+        
+        // --- 1. Loanable Funds Market (MLF) Functions ---
+        
+        function getMLFCurve(r, shift, isDemand) {
+            let q = [];
+            for (let i = 0; i < r.length; i++) {
+                // Demand Curve (DLF) is downward sloping: Q decreases as r increases
+                if (isDemand) {
+                    q.push(EQ_Q + (EQ_R - r[i]) / SLOPE_D + shift);
+                } 
+                // Supply Curve (SLF) is upward sloping: Q increases as r increases
+                else {
+                    q.push(EQ_Q + (r[i] - EQ_R) / SLOPE_S + shift);
+                }
+            }
+            return q;
+        }
+
+        function createMLFGraph(fiscalShift, monetaryShift) {
+            const r_range = Array.from({ length: 41 }, (_, i) => 1 + i * 0.2); 
+            
+            // Calculate Curve Points
+            const dlf_base = getMLFCurve(r_range, 0, true);
+            const slf_base = getMLFCurve(r_range, 0, false);
+            const dlf_new = getMLFCurve(r_range, fiscalShift, true);
+            const slf_new = getMLFCurve(r_range, monetaryShift, false); 
+
+            // Calculate New Equilibrium (r_new, q_new)
+            const sum_slopes = SLOPE_D + SLOPE_S;
+            const r_new = EQ_R + (SLOPE_D * SLOPE_S / sum_slopes) * (fiscalShift - monetaryShift);
+            const q_new = EQ_Q + (SLOPE_S * fiscalShift + SLOPE_D * monetaryShift) / sum_slopes;
+
+            const traces = [
+                // Base Curves (Gray Dashed)
+                { x: dlf_base, y: r_range, mode: 'lines', name: 'DLF (Base)', line: { dash: 'dash', color: 'gray', width: 1 }, showlegend: false, hoverinfo: 'none' },
+                { x: slf_base, y: r_range, mode: 'lines', name: 'SLF (Base)', line: { dash: 'dash', color: 'gray', width: 1 }, showlegend: false, hoverinfo: 'none' },
+
+                // New Curves (Colored Solid)
+                { x: dlf_new, y: r_range, mode: 'lines', name: 'DLF\' (Fiscal)', line: { color: 'red', width: 3 } },
+                { x: slf_new, y: r_range, mode: 'lines', name: 'SLF\' (Monetary)', line: { color: 'blue', width: 3 } },
+                
+                // Equilibrium Path and Points
+                { x: [EQ_Q, q_new], y: [EQ_R, r_new], mode: 'lines', name: 'Eq Path', line: { dash: 'dot', color: 'black', width: 2 }, showlegend: false, hoverinfo: 'none' },
+                { x: [EQ_Q], y: [EQ_R], mode: 'markers', name: 'E<sub>0</sub>', marker: { size: 10, color: 'green', symbol: 'circle' }, showlegend: false },
+            ];
+
+            const mlfLayout = {
+                title: 'Loanable Funds Market (MLF)',
+                xaxis: { title: 'Quantity of Loanable Funds (QLF)', range: [50, 150] },
+                yaxis: { title: 'Real Interest Rate (r)', range: [1, 9] },
+                showlegend: true,
+                legend: { x: 1.05, y: 0.9, xanchor: 'left' },
+                annotations: [
+                    { x: EQ_Q, y: EQ_R, text: 'E<sub>0</sub>', showarrow: true, arrowhead: 1, ax: -30, ay: -30 }, 
+                    {
+                        xref: 'x', yref: 'y', x: q_new, y: r_new, text: '+', 
+                        showarrow: false, font: { color: 'black', size: 24, weight: 'bold' },
+                        xanchor: 'center', yanchor: 'middle'
+                    },
+                    {
+                        x: q_new, y: r_new, text: 'E<sub>1</sub>', showarrow: true, arrowhead: 1, ax: 30, ay: -30,
+                    }
+                ]
+            };
+
+            Plotly.newPlot('mlfGraph', traces, mlfLayout, { displayModeBar: false });
+            return { r_new: r_new, fiscalShift: fiscalShift };
+        }
+
+        // --- 2. Aggregate Supply-Aggregate Demand (AS-AD) Functions ---
+        
+        function getADCurve(pl, shift) {
+            let rgdp = [];
+            for (let i = 0; i < pl.length; i++) {
+                // AD is downward sloping
+                rgdp.push(EQ_RGDP + (EQ_PL - pl[i]) / SLOPE_D + shift);
+            }
+            return rgdp;
+        }
+
+        function getSRASCurve(pl) {
+            let rgdp = [];
+            for (let i = 0; i < pl.length; i++) {
+                // SRAS is upward sloping
+                rgdp.push(EQ_RGDP + (pl[i] - EQ_PL) / SLOPE_S);
+            }
+            return rgdp;
+        }
+
+        function createASADGraph(r_new, fiscalShift) {
+            const pl_range = Array.from({ length: 41 }, (_, i) => 80 + i * 1); 
+
+            const AD_SENSITIVITY = 5; 
+            
+            // CORRECT AD Shift Calculation (V14 Logic Re-verified): 
+            // Total AD Shift = (Direct Fiscal Shift) + (Crowding In/Out Effect)
+            // Crowding Effect: (EQ_R - r_new) is the change in r. If r falls, this is positive (Crowding In).
+            const ad_shift = fiscalShift + (EQ_R - r_new) * AD_SENSITIVITY;
+            
+            // Calculate Curve Points
+            const ad_base = getADCurve(pl_range, 0); 
+            const sras_base = getSRASCurve(pl_range);
+            const ad_new = getADCurve(pl_range, ad_shift);
+
+            // Calculate new AS-AD equilibrium (PL_new, RGDP_new)
+            const s_avg = (SLOPE_D + SLOPE_S) / 2;
+            const pl_new = EQ_PL + s_avg * ad_shift;
+            const rgdp_new = EQ_RGDP + (pl_new - EQ_PL) / SLOPE_S;
+
+            const traces = [
+                { x: ad_base, y: pl_range, mode: 'lines', name: 'AD (Base)', line: { dash: 'dash', color: 'gray', width: 1 }, showlegend: false, hoverinfo: 'none' },
+                { x: sras_base, y: pl_range, mode: 'lines', name: 'SRAS', line: { color: 'green', width: 3 } },
+                { x: Array(pl_range.length).fill(MAX_RGDP), y: pl_range, mode: 'lines', name: 'LRAS (Potential)', line: { dash: 'dot', color: 'purple' }, hoverinfo: 'none' },
+                { x: ad_new, y: pl_range, mode: 'lines', name: 'AD\'', line: { color: 'red', width: 3 } },
+                { x: [EQ_RGDP, rgdp_new], y: [EQ_PL, pl_new], mode: 'lines', name: 'Eq Path', line: { dash: 'dot', color: 'black', width: 2 }, showlegend: false, hoverinfo: 'none' },
+                { x: [EQ_RGDP], y: [EQ_PL], mode: 'markers', name: 'E<sub>0</sub>', marker: { size: 10, color: 'green', symbol: 'circle' }, showlegend: false },
+                { x: [rgdp_new], y: [pl_new], mode: 'markers', name: 'E<sub>1</sub> (New Eq)', marker: { size: 10, color: 'black', symbol: 'diamond' } }
+            ];
+
+            const asadLayout = {
+                title: 'Aggregate Demand - Aggregate Supply (AS-AD)',
+                xaxis: { title: 'Real GDP (rgdp)', range: [400, 600] },
+                yaxis: { title: 'Price Level (PL)', range: [80, 120] },
+                showlegend: true,
+                legend: { x: 1.05, y: 0.9, xanchor: 'left' },
+                annotations: [
+                    { x: EQ_RGDP, y: EQ_PL, text: 'E<sub>0</sub>', showarrow: true, arrowhead: 1, ax: -30, ay: -30 }
+                ]
+            };
+
+            Plotly.newPlot('asadGraph', traces, asadLayout, { displayModeBar: false });
+        }
+
+        // --- 3. Update Function (Called by Sliders) ---
+
+        function updateGraphs() {
+            // Retrieve slider values
+            const fiscalPolicyValue = parseFloat(document.getElementById('fiscalPolicy').value);
+            const monetaryPolicyValue = parseFloat(document.getElementById('monetaryPolicy').value);
+
+            // Update display values
+            document.getElementById('fiscalValue').textContent = fiscalPolicyValue;
+            document.getElementById('monetaryValue').textContent = monetaryPolicyValue;
+
+            // Step 1: Update MLF Graph and get the new Real Interest Rate (r')
+            const mlf_results = createMLFGraph(fiscalPolicyValue, monetaryPolicyValue);
+            
+            // Step 2: Use the new Real Interest Rate (r') and the fiscal shift to update the AS-AD Graph
+            createASADGraph(mlf_results.r_new, mlf_results.fiscalShift);
+        }
+        
+        // Initial setup call: Using window.onload for maximum stability with external libraries.
+        window.onload = updateGraphs;
+    </script>
+
+</body>
+</html>
