@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Policy Analysis: MLF & AS-AD Simulator V2</title>
+    <title>Policy Analysis: MLF & AS-AD Simulator V3 (Corrected)</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         /* CSS for a clean, educational layout */
@@ -191,22 +191,17 @@
         function createMLFGraph(fiscalShift, monetaryShift) {
             const r_range = Array.from({ length: 41 }, (_, i) => 1 + i * 0.2); // r from 1 to 9
             
-            const dlf_base = getMLFCurve(r_range, 0, true);
-            const slf_base = getMLFCurve(r_range, 0, false);
-            
+            // Calculate shifted curves
             const dlf_new = getMLFCurve(r_range, fiscalShift, true);
             const slf_new = getMLFCurve(r_range, monetaryShift, false);
 
+            // Calculate the new equilibrium (r_new, q_new)
             const s_avg = (SLOPE_D + SLOPE_S) / 2;
             const r_new = EQ_R + s_avg * (fiscalShift - monetaryShift);
             const q_new = EQ_Q + (r_new - EQ_R) / SLOPE_S + monetaryShift;
 
             const traces = [
-                // Base Curves (dashed)
-                { x: dlf_base, y: r_range, mode: 'lines', name: 'DLF (Base)', line: { dash: 'dash', color: 'gray' }, hoverinfo: 'none' },
-                { x: slf_base, y: r_range, mode: 'lines', name: 'SLF (Base)', line: { dash: 'dash', color: 'gray' }, hoverinfo: 'none' },
-                
-                // New Curves (solid)
+                // New Curves (solid) - ONLY THE SHIFTED CURVES ARE PLOTTED NOW
                 { x: dlf_new, y: r_range, mode: 'lines', name: 'DLF\' (Fiscal)', line: { color: 'red', width: 3 } },
                 { x: slf_new, y: r_range, mode: 'lines', name: 'SLF\' (Monetary)', line: { color: 'blue', width: 3 } },
                 
@@ -219,7 +214,7 @@
                 xaxis: { title: 'Quantity of Loanable Funds (QLF)', range: [50, 150] },
                 yaxis: { title: 'Real Interest Rate (r)', range: [1, 9] },
                 showlegend: true,
-                legend: { x: 1.05, y: 0.9, xanchor: 'left' }, // Move legend to far right
+                legend: { x: 1.05, y: 0.9, xanchor: 'left' },
                 annotations: [
                     { x: EQ_Q, y: EQ_R, text: 'Initial Eq', showarrow: true, arrowhead: 1, ax: -30, ay: -30 }
                 ]
@@ -250,12 +245,11 @@
         function createASADGraph(r_new) {
             const pl_range = Array.from({ length: 41 }, (_, i) => 80 + i * 1); // PL from 80 to 120
 
-            // AD Shift is based on the change in r. Lower r shifts AD right (Investment/Consumption up).
+            // AD Shift is based on the change in r. Lower r shifts AD right.
             const AD_SENSITIVITY = 5; 
             const ad_shift = (EQ_R - r_new) * AD_SENSITIVITY; 
 
-            const sras_base = getSRASCurve(pl_range);
-            const ad_base = getADCurve(pl_range, 0);
+            const sras_base = getSRASCurve(pl_range); // SRAS is always fixed in the short-run analysis
             const ad_new = getADCurve(pl_range, ad_shift);
 
             // Calculate new AS-AD equilibrium (PL_new, RGDP_new)
@@ -264,8 +258,7 @@
             const rgdp_new = EQ_RGDP + (pl_new - EQ_PL) / SLOPE_S;
 
             const traces = [
-                // Base Curves (dashed)
-                { x: ad_base, y: pl_range, mode: 'lines', name: 'AD (Base)', line: { dash: 'dash', color: 'gray' }, hoverinfo: 'none' },
+                // Only SRAS and the new AD are plotted to show the shift
                 { x: sras_base, y: pl_range, mode: 'lines', name: 'SRAS', line: { color: 'green', width: 3 } },
                 { x: Array(pl_range.length).fill(MAX_RGDP), y: pl_range, mode: 'lines', name: 'LRAS (Potential)', line: { dash: 'dot', color: 'purple' }, hoverinfo: 'none' },
                 
@@ -281,7 +274,7 @@
                 xaxis: { title: 'Real GDP (rgdp)', range: [400, 600] },
                 yaxis: { title: 'Price Level (PL)', range: [80, 120] },
                 showlegend: true,
-                legend: { x: 1.05, y: 0.9, xanchor: 'left' }, // REQUEST 1: Move legend to far right
+                legend: { x: 1.05, y: 0.9, xanchor: 'left' },
                 annotations: [
                     { x: EQ_RGDP, y: EQ_PL, text: 'Initial Eq', showarrow: true, arrowhead: 1, ax: -30, ay: -30 },
                     { x: MAX_RGDP, y: 110, text: 'Y<sub>P</sub>', showarrow: false, font: { color: 'purple', size: 14 } }
