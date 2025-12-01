@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Policy Analysis: MLF & AS-AD Analyzer V27 (Stable Data + Diagrams)</title>
+    <title>Policy Analysis: MLF & AS-AD Analyzer V28 (Stable Data + Diagrams)</title>
     <style>
         /* CSS for a clean, educational layout */
         body {
@@ -84,7 +84,7 @@
         .outcome-negative { color: red; font-weight: bold; }
         .outcome-neutral { color: orange; font-weight: bold; }
 
-        /* --- STABLE DIAGRAM STYLES --- */
+        /* --- STABLE DIAGRAM STYLES (HTML/CSS ONLY) --- */
         .diagram-container {
             display: flex;
             justify-content: space-around;
@@ -138,21 +138,21 @@
             z-index: 10;
         }
         #mlf-shift {
-            color: red;
             top: 30%;
-            left: 60%;
+            left: 50%;
+            transform: translateX(-50%);
         }
         #asad-shift {
-            color: red;
             top: 40%;
-            left: 60%;
+            left: 50%;
+            transform: translateX(-50%);
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Policy Analysis: MLF & AS-AD Calculator (V27)</h1>
+        <h1>Policy Analysis: MLF & AS-AD Calculator (V28)</h1>
 
         <div class="policy-controls">
             <h2>Policy Simulation Controls 🧪</h2>
@@ -176,7 +176,7 @@
                 <div class="curve-base"></div>
                 <div class="axis-label y-label">Real Interest Rate ($r$)</div>
                 <div class="axis-label x-label">Quantity of Loanable Funds ($Q$)</div>
-                <div id="mlf-shift" class="shift-text">Neutral</div>
+                <div id="mlf-shift" class="shift-text">Neutral MLF Shift</div>
             </div>
 
             <div id="asadDiagram" class="diagram">
@@ -184,7 +184,7 @@
                 <div class="curve-base"></div>
                 <div class="axis-label y-label">Price Level ($\text{PL}$)</div>
                 <div class="axis-label x-label">Real GDP ($\text{RGDP}$)</div>
-                <div id="asad-shift" class="shift-text">Neutral</div>
+                <div id="asad-shift" class="shift-text">Neutral AD Shift</div>
             </div>
         </div>
 
@@ -207,7 +207,7 @@
                     <td>Real Interest Rate ($r$)</td>
                     <td>5.00%</td>
                     <td id="r_new">5.00%</td>
-                    <td id="lras_impact" rowspan="3" class="outcome-neutral">Neutral (No change in $r$)</td>
+                    <td id="lras_impact" rowspan="3" class="outcome-neutral">Neutral: No significant change in $r$, LRAS Growth Unaffected</td>
                 </tr>
                 <tr class="result-row">
                     <td>Price Level ($\text{PL}$)</td>
@@ -225,7 +225,7 @@
     </div>
 
     <script>
-        // --- Core Economic Logic (V26) ---
+        // --- Core Economic Logic ---
 
         // Constants for initial equilibrium and model parameters
         const EQ_R = 5.0;      
@@ -238,14 +238,14 @@
         const SUM_SLOPES = SLOPE_D + SLOPE_S;
 
         // Economic Constants
-        const AD_SENSITIVITY = 5.0; 
-        const FISCAL_MULTIPLIER = 2.0; 
-        const AD_TO_SRAS_RATIO = 0.5; 
+        const AD_SENSITIVITY = 5.0; // Impact of r change on AD (I & C)
+        const FISCAL_MULTIPLIER = 2.0; // Multiplier for G/T change
+        const AD_TO_SRAS_RATIO = 0.5; // PL change vs AD change
 
         function calculateEquilibrium(fiscalShift, monetaryShift) {
             
             // --- 1. MLF Market Calculation ---
-            // Formula for r_new from MLF equilibrium (derived from setting Q_D = Q_S)
+            // r_new = EQ_R + [(SLOPE_D * SLOPE_S) / SUM_SLOPES] * (DLF_Shift - SLF_Shift)
             const r_new = EQ_R + (SLOPE_D * SLOPE_S / SUM_SLOPES) * (fiscalShift - monetaryShift);
 
             // --- 2. AS-AD Shift Calculation ---
@@ -253,7 +253,7 @@
             // a) Direct Fiscal Effect
             const direct_fiscal_effect = fiscalShift * FISCAL_MULTIPLIER;
             
-            // b) Crowding-Out/In Effect (Monetary Policy + Fiscal Effect on I&C)
+            // b) Crowding-Out/In Effect: (Crowding In if r falls, Crowding Out if r rises)
             const crowding_effect = (EQ_R - r_new) * AD_SENSITIVITY;
 
             // Total AD Shift
@@ -268,7 +268,8 @@
                 pl: pl_new,
                 rgdp: rgdp_new,
                 ad_shift: ad_shift,
-                mlf_shift: fiscalShift - monetaryShift // Net MLF shift (DLF right, SLF left is a positive net shift)
+                // MLF shift is positive if DLF shifts right or SLF shifts left
+                mlf_net_shift: fiscalShift - monetaryShift 
             };
         }
 
@@ -295,10 +296,10 @@
             let r_diff = results.r - EQ_R;
             const lras_impact_element = document.getElementById('lras_impact');
 
-            if (r_diff > 0.05) { // Significant increase in r
+            if (r_diff > 0.05) { 
                 lras_text = `Crowding Out: $r$ $\uparrow$ by ${r_diff.toFixed(2)}%, Slows LRAS Growth`;
                 lras_impact_element.className = 'outcome-negative';
-            } else if (r_diff < -0.05) { // Significant decrease in r
+            } else if (r_diff < -0.05) { 
                 lras_text = `Crowding In: $r$ $\downarrow$ by ${Math.abs(r_diff).toFixed(2)}%, Boosts LRAS Growth`;
                 lras_impact_element.className = 'outcome-positive';
             } else {
@@ -311,34 +312,28 @@
             
             // MLF Diagram Shift
             const mlf_shift_element = document.getElementById('mlf-shift');
-            if (results.mlf_shift > 0.5) {
-                mlf_shift_element.textContent = 'Net Shift DLF Right';
+            if (results.mlf_net_shift > 0.5) {
+                mlf_shift_element.textContent = 'Net Shift DLF Right (Supply Left)';
                 mlf_shift_element.style.color = 'red';
-                mlf_shift_element.style.left = '60%';
-            } else if (results.mlf_shift < -0.5) {
-                mlf_shift_element.textContent = 'Net Shift SLF Left';
+            } else if (results.mlf_net_shift < -0.5) {
+                mlf_shift_element.textContent = 'Net Shift SLF Right (Demand Left)';
                 mlf_shift_element.style.color = 'blue';
-                mlf_shift_element.style.left = '30%';
             } else {
                 mlf_shift_element.textContent = 'Neutral MLF Shift';
                 mlf_shift_element.style.color = 'green';
-                mlf_shift_element.style.left = '50%';
             }
 
             // AS-AD Diagram Shift
             const asad_shift_element = document.getElementById('asad-shift');
             if (results.ad_shift > 0.5) {
-                asad_shift_element.textContent = 'AD Shifts Right';
+                asad_shift_element.textContent = 'AD Shifts Right (Expansion)';
                 asad_shift_element.style.color = 'green';
-                asad_shift_element.style.left = '60%';
             } else if (results.ad_shift < -0.5) {
-                asad_shift_element.textContent = 'AD Shifts Left';
+                asad_shift_element.textContent = 'AD Shifts Left (Contraction)';
                 asad_shift_element.style.color = 'red';
-                asad_shift_element.style.left = '30%';
             } else {
                 asad_shift_element.textContent = 'Neutral AD Shift';
                 asad_shift_element.style.color = 'orange';
-                asad_shift_element.style.left = '50%';
             }
         }
         
