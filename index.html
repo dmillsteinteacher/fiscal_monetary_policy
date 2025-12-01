@@ -285,16 +285,24 @@
         function drawMLF(shiftD, shiftS) {
             drawAxis(mlfCtx, 'Loanable Funds Market', 'QLF', 'Real Interest Rate (r)');
 
-            // Base Curve Definitions (Linear for simplicity)
-            // DLF (Demand): Decreasing function (steeper)
-            const dlfFn = (x) => 0.5 * PLOT_AREA.h - 0.5 * x;
-            // SLF (Supply): Increasing function (less steep)
-            const slfFn = (x) => 0.1 * PLOT_AREA.h + 0.5 * x;
+            /* New Base Curve Definitions: 
+                Set to intersect at the center of the plot area: (QLF=175, r=160)
+            */
+            const xCenter = PLOT_AREA.w / 2; // 175
+            const yCenter = PLOT_AREA.h / 2; // 160
+            const slope = 0.5; // Slope magnitude
 
-            // E0 (Initial Equilibrium - No Shift)
-            // Intersection: 0.5*H - 0.5*x = 0.1*H + 0.5*x  => x = 0.4*H
-            const x0 = 0.4 * PLOT_AREA.h; 
-            const y0 = dlfFn(x0);
+            // DLF (Demand): Downward sloping (y = yCenter + slope*xCenter - slope*x)
+            // DLF(x) = (160 + 0.5*175) - 0.5*x = 247.5 - 0.5*x
+            const dlfFn = (x) => (yCenter + slope * xCenter) - slope * x;
+
+            // SLF (Supply): Upward sloping (y = yCenter - slope*xCenter + slope*x)
+            // SLF(x) = (160 - 0.5*175) + 0.5*x = 72.5 + 0.5*x
+            const slfFn = (x) => (yCenter - slope * xCenter) + slope * x;
+
+            // E0 (Initial Equilibrium - Center)
+            const x0 = xCenter; 
+            const y0 = yCenter;
             drawEquilibrium(mlfCtx, x0, y0, 'E₀');
 
             // Draw initial curves
@@ -309,8 +317,8 @@
             const slfShiftedFn = (x) => slfFn(x - shiftSx);
 
             // Find E1 (New Equilibrium) by solving the shifted functions
-            // x1 = (0.4*H + 0.5*shiftDx + 0.5*shiftSx)
-            const x1 = 0.4 * PLOT_AREA.h + 0.5 * shiftDx + 0.5 * shiftSx; 
+            // x1 = xCenter + 0.5 * (shiftDx + shiftSx)
+            const x1 = xCenter + 0.5 * shiftDx + 0.5 * shiftSx; 
             const y1 = dlfShiftedFn(x1); 
 
             // Draw shifted curves if necessary
@@ -334,14 +342,29 @@
         function drawASAD(shiftAD) {
             drawAxis(asadCtx, 'Aggregate Supply-Demand', 'Real GDP (rgdp)', 'Price Level (PL)');
 
+            /* New Base Curve Definitions: 
+                Set to intersect at the center of the plot area: (Yp=175, PL=160)
+            */
+            const xCenter = PLOT_AREA.w / 2; // 175
+            const yCenter = PLOT_AREA.h / 2; // 160
+            const slope = 0.7; // Slope magnitude
+
+            // SRAS (Short-Run Aggregate Supply) - Upward sloping (y = yCenter - slope*xCenter + slope*x)
+            // SRAS(x) = (160 - 0.7*175) + 0.7*x = 37.5 + 0.7*x
+            const srasFn = (x) => (yCenter - slope * xCenter) + slope * x;
+
+            // AD (Aggregate Demand) - Downward sloping (y = yCenter + slope*xCenter - slope*x)
+            // AD(x) = (160 + 0.7*175) - 0.7*x = 282.5 - 0.7*x
+            const adFn = (x) => (yCenter + slope * xCenter) - slope * x;
+
             // LRAS (Long-Run Aggregate Supply) - Vertical at Potential Output (Yp)
-            const yP = PLOT_AREA.w / 2;
+            const yP = xCenter;
             asadCtx.strokeStyle = '#9CA3AF'; // Gray
             asadCtx.lineWidth = 2;
             asadCtx.setLineDash([2, 4]);
             asadCtx.beginPath();
             asadCtx.moveTo(PLOT_AREA.x + yP, PLOT_AREA.y + PLOT_AREA.h);
-            asadCtx.lineTo(PLOT_AREA.x + yP, PLOT_AREA.y);
+            ctx.lineTo(PLOT_AREA.x + yP, PLOT_AREA.y);
             asadCtx.stroke();
             asadCtx.setLineDash([]);
             asadCtx.fillStyle = '#9CA3AF';
@@ -349,26 +372,21 @@
             asadCtx.textAlign = 'center';
             asadCtx.fillText('LRAS (Yp)', PLOT_AREA.x + yP + 30, PLOT_AREA.y + PLOT_AREA.h - 10);
 
-            // SRAS (Short-Run Aggregate Supply) - Upward sloping
-            const srasFn = (x) => 0.1 * PLOT_AREA.h + 0.7 * x;
+            // E0 (Initial Equilibrium - Center)
+            const x0 = xCenter;
+            const y0 = yCenter;
+            drawEquilibrium(asadCtx, x0, y0, 'E₀');
             drawCurve(asadCtx, srasFn, '#10B981', false, 'SRAS'); // Green
 
-            // AD (Aggregate Demand) - Downward sloping
-            const adFn = (x) => 0.9 * PLOT_AREA.h - 0.7 * x;
-
-            // E0 (Initial Equilibrium)
-            const adFn_original = (x) => adFn(x);
-            const x0 = PLOT_AREA.w / 2;
-            const y0 = srasFn(x0);
-            drawEquilibrium(asadCtx, x0, y0, 'E₀');
-            drawCurve(asadCtx, adFn_original, '#3B82F6', false, 'AD₀'); // Blue
+            // Draw initial AD curve
+            drawCurve(asadCtx, adFn, '#3B82F6', false, 'AD₀'); // Blue
 
             // Calculate Shifted AD Curve
             const adShiftedFn = (x) => adFn(x - shiftAD);
 
             // Find E1 (New Equilibrium) by solving the shifted AD with SRAS:
-            // x1 = (0.8*H + 0.7*shiftAD) / 1.4
-            const x1 = (0.8 * PLOT_AREA.h + 0.7 * shiftAD) / 1.4;
+            // x1 = xCenter + (shiftAD / 1.4)
+            const x1 = xCenter + (shiftAD / 1.4);
             const y1 = srasFn(x1);
 
             // Draw shifted AD curve if necessary
@@ -412,24 +430,26 @@
                 }
             }
 
-            // --- MLF Shift Calculation (Hybrid Model) ---
-            
-            // DLF Shift (shiftDx): Only shifts right with XFP (>0)
+            // --- MLF Shift Calculation (Hybrid Model Confirmed) ---
+            const baseShiftMagnitude = SCALE_FACTOR * PLOT_AREA.w;
+
+            // 1. DLF Shift (shiftDx) - ONLY AFFECTED BY XFP (Government Borrowing)
             let shiftDx = 0; 
             if (fiscalValue > 0) {
-                shiftDx = fiscalValue * SCALE_FACTOR * PLOT_AREA.w;
+                // XFP (>0) increases demand, shifting DLF to the RIGHT (positive shift)
+                shiftDx = fiscalValue * baseShiftMagnitude;
             }
 
-            // SLF Shift (shiftSx): Shifts with Monetary Policy and CFP (<0)
+            // 2. SLF Shift (shiftSx) - AFFECTED BY MONETARY POLICY AND CFP (National Saving)
             let shiftSx = 0;
 
-            // 1. Monetary Component: XMP (>0) shifts SLF right (positive shiftSx). CMP (<0) shifts SLF left (negative shiftSx).
-            shiftSx += monetaryValue * SCALE_FACTOR * PLOT_AREA.w;
+            // Monetary Component: XMP shifts SLF right (+), CMP shifts SLF left (-)
+            shiftSx += monetaryValue * baseShiftMagnitude;
 
-            // 2. Fiscal Component: CFP (<0) shifts SLF right (positive shiftSx).
+            // CFP Component: CFP (<0) decreases borrowing, increasing National Saving, shifting SLF to the RIGHT (+)
             if (fiscalValue < 0) {
-                // We add the positive magnitude of the negative fiscalValue
-                shiftSx += Math.abs(fiscalValue) * SCALE_FACTOR * PLOT_AREA.w; 
+                // We use the absolute value of the negative fiscalValue to ensure a positive shiftDx (rightward)
+                shiftSx += Math.abs(fiscalValue) * baseShiftMagnitude; 
             }
 
             // --- AS-AD Shift Calculation (Remains combined) ---
