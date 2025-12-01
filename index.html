@@ -130,7 +130,7 @@
             <h2 class="text-2xl font-semibold mb-6 text-indigo-600 border-b pb-2">Policy Analysis & Commentary</h2>
             <div id="analysisContent" class="space-y-6 text-gray-700">
                 
-                <h3 class="text-xl font-semibold text-indigo-700 mb-4 border-b pb-1">Standalone Policy Flaws</h3>
+                <h3 class="xl font-semibold text-indigo-700 mb-4 border-b pb-1">Standalone Policy Flaws</h3>
 
                 <!-- XFP Flaw: Crowding Out -->
                 <div class="p-4 border border-red-300 rounded-lg bg-red-50">
@@ -161,7 +161,7 @@
                 <!-- Combined Policy Success -->
                 <div class="p-4 border border-green-300 rounded-lg bg-green-50">
                     <h4 class="font-bold text-green-700 mb-1">Success of Coordinated Policy (Obama & Truman)</h4>
-                    <p>Coordinated combinations eliminate the primary flaw of each standalone policy. During recessions, the **Obama Combination** (<b>XFP</b> + <b>XMP</b>) uses XMP (<b>SLF</b> right) to offset the upward pressure on the Real Interest Rate (<b>r</b>) caused by XFP (<b>DLF</b> right). This prevents Crowding Out, allowing investment (<b>I</b>) to remain high while maximizing <b>AD</b> stimulus. Conversely, during periods of high inflation, the **Truman Combination** (<b>CFP</b> + <b>CMP</b>) works together to contract <b>AD</b>, with CFP (<b>DLF</b> left) preventing a disruptive spike in investment that would counteract CMP (<b>SLF</b> left), ensuring a smooth return to price stability.</p>
+                    <p>Coordinated combinations eliminate the primary flaw of each standalone policy. During recessions, the **Obama Combination** ($\mathbf{XFP}$ shifts $\mathbf{DLF}$ right + $\mathbf{XMP}$ shifts $\mathbf{SLF}$ right) allows XMP to counteract the Crowding Out effect caused by XFP, maximizing the stimulus to $\mathbf{AD}$ while keeping investment ($\mathbf{I}$) high. Conversely, during periods of high inflation, the **Truman Combination** ($\mathbf{CFP}$ shifts $\mathbf{SLF}$ right + $\mathbf{CMP}$ shifts $\mathbf{SLF}$ left) allows the policies to focus their impact on contracting $\mathbf{AD}$ without generating disruptive interest rate fluctuations, ensuring stable price control.</p>
                 </div>
 
             </div>
@@ -292,8 +292,8 @@
             const slfFn = (x) => 0.1 * PLOT_AREA.h + 0.5 * x;
 
             // E0 (Initial Equilibrium - No Shift)
-            // Set x0 at 50% of PLOT_AREA.w, y0 at 50% of PLOT_AREA.h
-            const x0 = PLOT_AREA.w / 2;
+            // Intersection: 0.5*H - 0.5*x = 0.1*H + 0.5*x  => x = 0.4*H
+            const x0 = 0.4 * PLOT_AREA.h; 
             const y0 = dlfFn(x0);
             drawEquilibrium(mlfCtx, x0, y0, 'E₀');
 
@@ -302,23 +302,22 @@
             drawCurve(mlfCtx, slfFn, '#F59E0B', false, 'SLF₀'); // Amber
 
             // Calculate Shifted Curves
-            const shiftDx = fiscalValue * SCALE_FACTOR * PLOT_AREA.w; // D_LF shift (XFP increases DLF, CFP decreases DLF)
-            const shiftSx = monetaryValue * SCALE_FACTOR * PLOT_AREA.w; // S_LF shift (XMP increases SLF, CMP decreases SLF)
+            const shiftDx = shiftD; // DLF shift (only XFP)
+            const shiftSx = shiftS; // SLF shift (Monetary and CFP)
 
             const dlfShiftedFn = (x) => dlfFn(x - shiftDx);
             const slfShiftedFn = (x) => slfFn(x - shiftSx);
 
             // Find E1 (New Equilibrium) by solving the shifted functions
-            // Set dlfShiftedFn(x1) = slfShiftedFn(x1)
-            // 0.5*H - 0.5*(x1 - shiftDx) = 0.1*H + 0.5*(x1 - shiftSx)
-            // 0.4*H + 0.5*shiftDx + 0.5*shiftSx = x1
+            // x1 = (0.4*H + 0.5*shiftDx + 0.5*shiftSx)
             const x1 = 0.4 * PLOT_AREA.h + 0.5 * shiftDx + 0.5 * shiftSx; 
-            const y1 = dlfShiftedFn(x1); // or slfShiftedFn(x1)
+            const y1 = dlfShiftedFn(x1); 
 
             // Draw shifted curves if necessary
             if (shiftDx !== 0) {
                 drawCurve(mlfCtx, dlfShiftedFn, '#3B82F6', true, 'DLF₁'); // Dashed Blue
             }
+            // SLF will shift if either Monetary or CFP is non-zero
             if (shiftSx !== 0) {
                 drawCurve(mlfCtx, slfShiftedFn, '#F59E0B', true, 'SLF₁'); // Dashed Amber
             }
@@ -368,9 +367,6 @@
             const adShiftedFn = (x) => adFn(x - shiftAD);
 
             // Find E1 (New Equilibrium) by solving the shifted AD with SRAS:
-            // adShiftedFn(x1) = srasFn(x1)
-            // 0.9*H - 0.7*(x1 - shiftAD) = 0.1*H + 0.7*x1
-            // 0.8*H + 0.7*shiftAD = 1.4*x1
             // x1 = (0.8*H + 0.7*shiftAD) / 1.4
             const x1 = (0.8 * PLOT_AREA.h + 0.7 * shiftAD) / 1.4;
             const y1 = srasFn(x1);
@@ -383,7 +379,7 @@
         }
 
 
-        // --- Policy Update Logic (Updated to remove analysis call) ---
+        // --- Policy Update Logic (Hybrid MLF Model Implemented) ---
 
         function updatePolicy(type, value) {
             const val = parseInt(value);
@@ -416,16 +412,33 @@
                 }
             }
 
-            // Calculate Shifts
-            const fiscalShiftDLF = fiscalValue * SCALE_FACTOR * PLOT_AREA.w; // D_LF shift
-            const monetaryShiftSLF = monetaryValue * SCALE_FACTOR * PLOT_AREA.w; // S_LF shift
-            const combinedADShift = (fiscalValue + monetaryValue) * SCALE_FACTOR * PLOT_AREA.w * 0.8; // AD shift
+            // --- MLF Shift Calculation (Hybrid Model) ---
+            
+            // DLF Shift (shiftDx): Only shifts right with XFP (>0)
+            let shiftDx = 0; 
+            if (fiscalValue > 0) {
+                shiftDx = fiscalValue * SCALE_FACTOR * PLOT_AREA.w;
+            }
+
+            // SLF Shift (shiftSx): Shifts with Monetary Policy and CFP (<0)
+            let shiftSx = 0;
+
+            // 1. Monetary Component: XMP (>0) shifts SLF right (positive shiftSx). CMP (<0) shifts SLF left (negative shiftSx).
+            shiftSx += monetaryValue * SCALE_FACTOR * PLOT_AREA.w;
+
+            // 2. Fiscal Component: CFP (<0) shifts SLF right (positive shiftSx).
+            if (fiscalValue < 0) {
+                // We add the positive magnitude of the negative fiscalValue
+                shiftSx += Math.abs(fiscalValue) * SCALE_FACTOR * PLOT_AREA.w; 
+            }
+
+            // --- AS-AD Shift Calculation (Remains combined) ---
+            // Fiscal AD effect + Monetary AD effect
+            const combinedADShift = (fiscalValue + monetaryValue) * SCALE_FACTOR * PLOT_AREA.w * 0.8; 
 
             // Redraw Graphs
-            drawMLF(fiscalShiftDLF, monetaryShiftSLF);
+            drawMLF(shiftDx, shiftSx);
             drawASAD(combinedADShift);
-
-            // Removed: updateAnalysis(fiscalValue, monetaryValue);
         }
 
         // --- Initialization ---
