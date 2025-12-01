@@ -359,14 +359,14 @@
             asadCtx.setLineDash([2, 4]);
             asadCtx.beginPath();
             asadCtx.moveTo(PLOT_AREA.x + yP, PLOT_AREA.y + PLOT_AREA.h);
-            // FIX: Changed 'ctx' to 'asadCtx' here
+            // Draw LRAS line
             asadCtx.lineTo(PLOT_AREA.x + yP, PLOT_AREA.y);
             asadCtx.stroke();
             asadCtx.setLineDash([]);
             asadCtx.fillStyle = '#9CA3AF';
             asadCtx.font = '14px Inter';
             asadCtx.textAlign = 'center';
-            // FIX: Changed 'ctx' to 'asadCtx' here
+            // Label LRAS
             asadCtx.fillText('LRAS (Yp)', PLOT_AREA.x + yP + 30, PLOT_AREA.y + PLOT_AREA.h - 10);
 
             // E0 (Initial Equilibrium - Center)
