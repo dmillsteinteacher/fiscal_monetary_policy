@@ -285,19 +285,17 @@
         function drawMLF(shiftD, shiftS) {
             drawAxis(mlfCtx, 'Loanable Funds Market', 'QLF', 'Real Interest Rate (r)');
 
-            /* New Base Curve Definitions: 
+            /* Base Curve Definitions: 
                 Set to intersect at the center of the plot area: (QLF=175, r=160)
             */
             const xCenter = PLOT_AREA.w / 2; // 175
             const yCenter = PLOT_AREA.h / 2; // 160
             const slope = 0.5; // Slope magnitude
 
-            // DLF (Demand): Downward sloping (y = yCenter + slope*xCenter - slope*x)
-            // DLF(x) = (160 + 0.5*175) - 0.5*x = 247.5 - 0.5*x
+            // DLF (Demand): Downward sloping 
             const dlfFn = (x) => (yCenter + slope * xCenter) - slope * x;
 
-            // SLF (Supply): Upward sloping (y = yCenter - slope*xCenter + slope*x)
-            // SLF(x) = (160 - 0.5*175) + 0.5*x = 72.5 + 0.5*x
+            // SLF (Supply): Upward sloping 
             const slfFn = (x) => (yCenter - slope * xCenter) + slope * x;
 
             // E0 (Initial Equilibrium - Center)
@@ -317,7 +315,6 @@
             const slfShiftedFn = (x) => slfFn(x - shiftSx);
 
             // Find E1 (New Equilibrium) by solving the shifted functions
-            // x1 = xCenter + 0.5 * (shiftDx + shiftSx)
             const x1 = xCenter + 0.5 * shiftDx + 0.5 * shiftSx; 
             const y1 = dlfShiftedFn(x1); 
 
@@ -342,19 +339,17 @@
         function drawASAD(shiftAD) {
             drawAxis(asadCtx, 'Aggregate Supply-Demand', 'Real GDP (rgdp)', 'Price Level (PL)');
 
-            /* New Base Curve Definitions: 
+            /* Base Curve Definitions: 
                 Set to intersect at the center of the plot area: (Yp=175, PL=160)
             */
             const xCenter = PLOT_AREA.w / 2; // 175
             const yCenter = PLOT_AREA.h / 2; // 160
             const slope = 0.7; // Slope magnitude
 
-            // SRAS (Short-Run Aggregate Supply) - Upward sloping (y = yCenter - slope*xCenter + slope*x)
-            // SRAS(x) = (160 - 0.7*175) + 0.7*x = 37.5 + 0.7*x
+            // SRAS (Short-Run Aggregate Supply) - Upward sloping 
             const srasFn = (x) => (yCenter - slope * xCenter) + slope * x;
 
-            // AD (Aggregate Demand) - Downward sloping (y = yCenter + slope*xCenter - slope*x)
-            // AD(x) = (160 + 0.7*175) - 0.7*x = 282.5 - 0.7*x
+            // AD (Aggregate Demand) - Downward sloping 
             const adFn = (x) => (yCenter + slope * xCenter) - slope * x;
 
             // LRAS (Long-Run Aggregate Supply) - Vertical at Potential Output (Yp)
@@ -364,12 +359,14 @@
             asadCtx.setLineDash([2, 4]);
             asadCtx.beginPath();
             asadCtx.moveTo(PLOT_AREA.x + yP, PLOT_AREA.y + PLOT_AREA.h);
-            ctx.lineTo(PLOT_AREA.x + yP, PLOT_AREA.y);
+            // FIX: Changed 'ctx' to 'asadCtx' here
+            asadCtx.lineTo(PLOT_AREA.x + yP, PLOT_AREA.y);
             asadCtx.stroke();
             asadCtx.setLineDash([]);
             asadCtx.fillStyle = '#9CA3AF';
             asadCtx.font = '14px Inter';
             asadCtx.textAlign = 'center';
+            // FIX: Changed 'ctx' to 'asadCtx' here
             asadCtx.fillText('LRAS (Yp)', PLOT_AREA.x + yP + 30, PLOT_AREA.y + PLOT_AREA.h - 10);
 
             // E0 (Initial Equilibrium - Center)
@@ -385,7 +382,6 @@
             const adShiftedFn = (x) => adFn(x - shiftAD);
 
             // Find E1 (New Equilibrium) by solving the shifted AD with SRAS:
-            // x1 = xCenter + (shiftAD / 1.4)
             const x1 = xCenter + (shiftAD / 1.4);
             const y1 = srasFn(x1);
 
